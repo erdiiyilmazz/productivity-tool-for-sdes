@@ -1,7 +1,9 @@
 package com.erdidev.timemanager.controller;
 
 import com.erdidev.timemanager.dto.TaskDto;
+import com.erdidev.timemanager.dto.CategoryDto;
 import com.erdidev.timemanager.service.TaskService;
+import com.erdidev.timemanager.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -13,12 +15,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/tasks")
 @RequiredArgsConstructor
-@Tag(name = "Task Management", description = "APIs for managing tasks")
+@Tag(name = "Task Management", description = "APIs for managing tasks and categories")
 public class TaskController {
     private final TaskService taskService;
+    private final CategoryService categoryService;
 
     @GetMapping
     @Operation(summary = "Get all tasks with pagination")
@@ -51,6 +56,25 @@ public class TaskController {
     @Operation(summary = "Delete a task")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/categories")
+    @Operation(summary = "Get all categories")
+    public ResponseEntity<List<CategoryDto>> getCategories() {
+        return ResponseEntity.ok(categoryService.getAllCategories());
+    }
+
+    @PostMapping("/categories")
+    @Operation(summary = "Create a new category")
+    public ResponseEntity<CategoryDto> createCategory(@Valid @RequestBody CategoryDto categoryDto) {
+        return new ResponseEntity<>(categoryService.createCategory(categoryDto), HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/categories/{id}")
+    @Operation(summary = "Delete a category")
+    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
+        categoryService.deleteCategory(id);
         return ResponseEntity.noContent().build();
     }
 } 

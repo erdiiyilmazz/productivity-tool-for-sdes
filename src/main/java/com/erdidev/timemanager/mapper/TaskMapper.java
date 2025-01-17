@@ -6,15 +6,19 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface TaskMapper {
+    @Mapping(target = "categoryId", source = "category.id")
+    @Mapping(target = "projectId", source = "project.id")
     TaskDto toDto(Task task);
 
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "category", ignore = true)
+    @Mapping(target = "project", ignore = true)
+    @Mapping(target = "attachments", ignore = true)
     Task toEntity(TaskDto taskDto);
 
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "category", ignore = true)
+    @Mapping(target = "project", ignore = true)
+    @Mapping(target = "attachments", ignore = true)
     void updateEntity(TaskDto taskDto, @MappingTarget Task task);
 } 
