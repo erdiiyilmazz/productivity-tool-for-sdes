@@ -1,10 +1,11 @@
 package com.erdidev.timemanager.controller;
 
 import com.erdidev.timemanager.dto.TaskDto;
-import com.erdidev.timemanager.dto.CategoryDto;
+import com.erdidev.timemanager.model.Priority;
+import com.erdidev.timemanager.model.TaskStatus;
 import com.erdidev.timemanager.service.TaskService;
-import com.erdidev.timemanager.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,16 +21,58 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/tasks")
 @RequiredArgsConstructor
-@Tag(name = "Task Management", description = "APIs for managing tasks and categories")
+@Tag(name = "Task Management", description = "APIs for managing tasks")
 public class TaskController {
     private final TaskService taskService;
-    private final CategoryService categoryService;
 
     @GetMapping
     @Operation(summary = "Get all tasks with pagination")
     public ResponseEntity<Page<TaskDto>> getTasks(
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(taskService.getTasks(pageable));
+    }
+
+    @GetMapping("/project/{projectId}")
+    @Operation(summary = "Get tasks by project")
+    public ResponseEntity<Page<TaskDto>> getTasksByProject(
+            @PathVariable Long projectId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(taskService.getTasksByProject(projectId, pageable));
+    }
+
+    @GetMapping("/category/{categoryId}")
+    @Operation(summary = "Get tasks by category")
+    public ResponseEntity<Page<TaskDto>> getTasksByCategory(
+            @PathVariable Long categoryId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(taskService.getTasksByCategory(categoryId, pageable));
+    }
+
+    @GetMapping("/status/{status}")
+    @Operation(summary = "Get tasks by status")
+    public ResponseEntity<List<TaskDto>> getTasksByStatus(
+            @PathVariable TaskStatus status) {
+        return ResponseEntity.ok(taskService.getTasksByStatus(status));
+    }
+
+    @GetMapping("/priority/{priority}")
+    @Operation(summary = "Get tasks by priority")
+    public ResponseEntity<List<TaskDto>> getTasksByPriority(
+            @PathVariable Priority priority) {
+        return ResponseEntity.ok(taskService.getTasksByPriority(priority));
+    }
+
+    @GetMapping("/overdue")
+    @Operation(summary = "Get overdue tasks")
+    public ResponseEntity<List<TaskDto>> getOverdueTasks() {
+        return ResponseEntity.ok(taskService.getOverdueTasks());
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Search tasks by title")
+    public ResponseEntity<List<TaskDto>> searchTasks(
+            @Parameter(description = "Search query") @RequestParam String query) {
+        return ResponseEntity.ok(taskService.searchTasks(query));
     }
 
     @GetMapping("/{id}")
@@ -56,25 +99,6 @@ public class TaskController {
     @Operation(summary = "Delete a task")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/categories")
-    @Operation(summary = "Get all categories")
-    public ResponseEntity<List<CategoryDto>> getCategories() {
-        return ResponseEntity.ok(categoryService.getAllCategories());
-    }
-
-    @PostMapping("/categories")
-    @Operation(summary = "Create a new category")
-    public ResponseEntity<CategoryDto> createCategory(@Valid @RequestBody CategoryDto categoryDto) {
-        return new ResponseEntity<>(categoryService.createCategory(categoryDto), HttpStatus.CREATED);
-    }
-
-    @DeleteMapping("/categories/{id}")
-    @Operation(summary = "Delete a category")
-    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
-        categoryService.deleteCategory(id);
         return ResponseEntity.noContent().build();
     }
 } 

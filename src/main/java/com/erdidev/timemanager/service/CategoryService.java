@@ -7,6 +7,8 @@ import com.erdidev.timemanager.model.Category;
 import com.erdidev.timemanager.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +21,23 @@ import java.util.stream.Collectors;
 public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
+
+    @Transactional(readOnly = true)
+    public Page<CategoryDto> getCategories(Pageable pageable) {
+        return categoryRepository.findAll(pageable).map(categoryMapper::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CategoryDto> getCategoriesByProject(Long projectId, Pageable pageable) {
+        return categoryRepository.findByProjectId(projectId, pageable).map(categoryMapper::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CategoryDto> searchCategories(String query) {
+        return categoryRepository.findByNameContainingIgnoreCase(query).stream()
+                .map(categoryMapper::toDto)
+                .collect(Collectors.toList());
+    }
 
     @Transactional(readOnly = true)
     public List<CategoryDto> getAllCategories() {
