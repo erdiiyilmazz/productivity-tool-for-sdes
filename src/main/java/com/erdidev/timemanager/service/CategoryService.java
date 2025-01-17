@@ -2,9 +2,12 @@ package com.erdidev.timemanager.service;
 
 import com.erdidev.timemanager.dto.CategoryDto;
 import com.erdidev.timemanager.exception.CategoryNotFoundException;
+import com.erdidev.timemanager.exception.ProjectNotFoundException;
 import com.erdidev.timemanager.mapper.CategoryMapper;
 import com.erdidev.timemanager.model.Category;
+import com.erdidev.timemanager.model.Project;
 import com.erdidev.timemanager.repository.CategoryRepository;
+import com.erdidev.timemanager.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -20,6 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CategoryService {
     private final CategoryRepository categoryRepository;
+    private final ProjectRepository projectRepository;
     private final CategoryMapper categoryMapper;
 
     @Transactional(readOnly = true)
@@ -54,8 +58,13 @@ public class CategoryService {
     }
 
     @Transactional
-    public CategoryDto createCategory(CategoryDto categoryDto) {
+    public CategoryDto createCategory(Long projectId, CategoryDto categoryDto) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+        
         Category category = categoryMapper.toEntity(categoryDto);
+        category.setProject(project);
+        
         Category savedCategory = categoryRepository.save(category);
         return categoryMapper.toDto(savedCategory);
     }

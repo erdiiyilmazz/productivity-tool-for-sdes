@@ -17,42 +17,41 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/categories")
+@RequestMapping("/api/v1/projects/{projectId}/categories")
 @RequiredArgsConstructor
 @Tag(name = "Category Management", description = "APIs for managing categories")
 public class CategoryController {
     private final CategoryService categoryService;
 
     @GetMapping
-    @Operation(summary = "Get all categories with pagination")
-    public ResponseEntity<Page<CategoryDto>> getCategories(
-            @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(categoryService.getCategories(pageable));
-    }
-
-    @GetMapping("/{id}")
-    @Operation(summary = "Get a category by ID")
-    public ResponseEntity<CategoryDto> getCategory(@PathVariable Long id) {
-        return ResponseEntity.ok(categoryService.getCategory(id));
-    }
-
-    @GetMapping("/project/{projectId}")
     @Operation(summary = "Get categories by project")
-    public ResponseEntity<Page<CategoryDto>> getCategoriesByProject(
+    public ResponseEntity<Page<CategoryDto>> getCategories(
             @PathVariable Long projectId,
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(categoryService.getCategoriesByProject(projectId, pageable));
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Get a category by ID")
+    public ResponseEntity<CategoryDto> getCategory(
+            @PathVariable Long projectId,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(categoryService.getCategory(id));
+    }
+
     @PostMapping
-    @Operation(summary = "Create a new category")
-    public ResponseEntity<CategoryDto> createCategory(@Valid @RequestBody CategoryDto categoryDto) {
-        return new ResponseEntity<>(categoryService.createCategory(categoryDto), HttpStatus.CREATED);
+    @Operation(summary = "Create a new category in project")
+    public ResponseEntity<CategoryDto> createCategory(
+            @PathVariable Long projectId,
+            @Valid @RequestBody CategoryDto categoryDto) {
+        return new ResponseEntity<>(categoryService.createCategory(projectId, categoryDto), 
+            HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing category")
     public ResponseEntity<CategoryDto> updateCategory(
+            @PathVariable Long projectId,
             @PathVariable Long id,
             @Valid @RequestBody CategoryDto categoryDto) {
         return ResponseEntity.ok(categoryService.updateCategory(id, categoryDto));
@@ -60,7 +59,9 @@ public class CategoryController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a category")
-    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteCategory(
+            @PathVariable Long projectId,
+            @PathVariable Long id) {
         categoryService.deleteCategory(id);
         return ResponseEntity.noContent().build();
     }
@@ -68,6 +69,7 @@ public class CategoryController {
     @GetMapping("/search")
     @Operation(summary = "Search categories by name")
     public ResponseEntity<List<CategoryDto>> searchCategories(
+            @PathVariable Long projectId,
             @Parameter(description = "Search query") @RequestParam String query) {
         return ResponseEntity.ok(categoryService.searchCategories(query));
     }
