@@ -1,14 +1,11 @@
 package com.erdidev.timemanager.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @Entity
@@ -16,23 +13,28 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "tasks")
-public class Task {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@EqualsAndHashCode(callSuper = true)
+public class Task extends BaseEntity {
+        @Column(nullable = false)
+        private String title;
 
-    @Column(nullable = false)
-    private String title;
+        @Column(length = 1000)
+        private String description;
 
-    @Column(length = 1000)
-    private String description;
+        @Enumerated(EnumType.STRING)
+        private TaskStatus status;
 
-    @Enumerated(EnumType.STRING)
-    private TaskStatus status;
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "category_id")
+        private Category category;
 
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
+        @ManyToOne
+        private Project project;
+        
+        @Enumerated(EnumType.STRING)
+        private Priority priority;
+        private LocalDateTime dueDate;
+        
+        @OneToMany(cascade = CascadeType.ALL)
+        private Set<TaskAttachment> attachments = new HashSet<>();
 } 

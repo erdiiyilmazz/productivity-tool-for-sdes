@@ -1,14 +1,17 @@
 package com.erdidev.timemanager.dto;
 
+import com.erdidev.timemanager.model.Priority;
 import com.erdidev.timemanager.model.TaskStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.time.LocalDateTime;
 
 @Data
-public class TaskDto {
-    private Long id;
-    
+@EqualsAndHashCode(callSuper = true)
+public class TaskDto extends BaseDto {
     @NotBlank(message = "Title is required")
     @Size(min = 1, max = 255, message = "Title must be between 1 and 255 characters")
     private String title;
@@ -17,4 +20,8 @@ public class TaskDto {
     private String description;
     
     private TaskStatus status;
+    private Priority priority;
+    private LocalDateTime dueDate;
+    private Long categoryId;
+    private Long projectId;
 } 
