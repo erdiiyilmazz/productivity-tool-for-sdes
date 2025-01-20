@@ -1,26 +1,19 @@
 package com.erdidev.timemanager.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.servers.Server;
-import org.springframework.beans.factory.annotation.Value;
+import io.swagger.v3.oas.models.info.Info;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.List;
 
 @Configuration
 public class OpenApiConfig {
 
-    @Value("${timemanager.openapi.dev-url}")
-    private String devUrl;
-
     @Bean
-    public OpenAPI myOpenAPI() {
-        Server devServer = new Server();
-        devServer.setUrl(devUrl);
-        devServer.setDescription("Server URL in Development environment");
-
+    public OpenAPI timeManagerOpenAPI() {
         return new OpenAPI()
-                .servers(List.of(devServer));
+                .info(new Info()
+                        .title("Time Manager API")
+                        .description("Time Management Application API Documentation")
+                        .version("1.0"));
     }
 } 

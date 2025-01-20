@@ -2,17 +2,20 @@ package com.erdidev.timemanager.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.erdidev.timemanager.dto.ProjectDto;
 import com.erdidev.timemanager.service.ProjectService;
 import org.springframework.data.domain.Page;
-import org.springframework.data.web.PageableDefault;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import com.erdidev.timemanager.exception.ProjectNotFoundException;
 
 import java.util.List;
 
@@ -24,9 +27,30 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @GetMapping
-    @Operation(summary = "Get all projects with pagination")
+    @Operation(
+        summary = "Get all projects with pagination",
+        description = "Returns a paginated list of projects. Sort options: createdAt, name"
+    )
     public ResponseEntity<Page<ProjectDto>> getProjects(
-            @PageableDefault(size = 20) Pageable pageable) {
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+            
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+            
+            @Parameter(
+                description = "Sort field and direction (e.g., createdAt,desc or name,asc)",
+                example = "createdAt,desc"
+            )
+            @RequestParam(defaultValue = "createdAt,desc") String sort) {
+        
+        String[] sortParams = sort.split(",");
+        String sortField = sortParams[0];
+        String sortDirection = sortParams.length > 1 ? sortParams[1] : "desc";
+        
+        Direction direction = Direction.fromString(sortDirection);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+        
         return ResponseEntity.ok(projectService.getProjects(pageable));
     }
 
@@ -43,11 +67,18 @@ public class ProjectController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update an existing project")
+    @Operation(
+        summary = "Update an existing project",
+        description = "Updates a project's name and description"
+    )
     public ResponseEntity<ProjectDto> updateProject(
             @PathVariable Long id,
             @Valid @RequestBody ProjectDto projectDto) {
-        return ResponseEntity.ok(projectService.updateProject(id, projectDto));
+        try {
+            return ResponseEntity.ok(projectService.updateProject(id, projectDto));
+        } catch (ProjectNotFoundException ex) {
+            throw ex;
+        }
     }
 
     @DeleteMapping("/{id}")

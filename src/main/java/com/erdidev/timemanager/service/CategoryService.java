@@ -33,11 +33,17 @@ public class CategoryService {
 
     @Transactional(readOnly = true)
     public Page<CategoryDto> getCategoriesByProject(Long projectId, Pageable pageable) {
-        return categoryRepository.findByProjectId(projectId, pageable).map(categoryMapper::toDto);
+        log.debug("Fetching categories for project id: {} with pagination: {}", projectId, pageable);
+        if (!projectRepository.existsById(projectId)) {
+            throw new ProjectNotFoundException(projectId);
+        }
+        return categoryRepository.findByProjectId(projectId, pageable)
+                .map(categoryMapper::toDto);
     }
 
     @Transactional(readOnly = true)
     public List<CategoryDto> searchCategories(String query) {
+        log.debug("Searching categories with query: {}", query);
         return categoryRepository.findByNameContainingIgnoreCase(query).stream()
                 .map(categoryMapper::toDto)
                 .collect(Collectors.toList());
@@ -52,6 +58,7 @@ public class CategoryService {
 
     @Transactional(readOnly = true)
     public CategoryDto getCategory(Long id) {
+        log.debug("Fetching category with id: {}", id);
         return categoryRepository.findById(id)
                 .map(categoryMapper::toDto)
                 .orElseThrow(() -> new CategoryNotFoundException(id));
@@ -59,27 +66,32 @@ public class CategoryService {
 
     @Transactional
     public CategoryDto createCategory(Long projectId, CategoryDto categoryDto) {
+        log.debug("Creating category for project id: {}", projectId);
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
         
         Category category = categoryMapper.toEntity(categoryDto);
         category.setProject(project);
-        
         Category savedCategory = categoryRepository.save(category);
         return categoryMapper.toDto(savedCategory);
     }
 
     @Transactional
     public CategoryDto updateCategory(Long id, CategoryDto categoryDto) {
-        Category category = categoryRepository.findById(id)
+        log.debug("Updating category with id: {}", id);
+        Category existingCategory = categoryRepository.findById(id)
                 .orElseThrow(() -> new CategoryNotFoundException(id));
-        categoryMapper.updateEntity(categoryDto, category);
-        Category updatedCategory = categoryRepository.save(category);
+        
+        existingCategory.setName(categoryDto.getName());
+        existingCategory.setDescription(categoryDto.getDescription());
+        
+        Category updatedCategory = categoryRepository.save(existingCategory);
         return categoryMapper.toDto(updatedCategory);
     }
 
     @Transactional
     public void deleteCategory(Long id) {
+        log.debug("Deleting category with id: {}", id);
         if (!categoryRepository.existsById(id)) {
             throw new CategoryNotFoundException(id);
         }

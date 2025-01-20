@@ -51,7 +51,9 @@ public class ProjectService {
         Project existingProject = projectRepository.findById(id)
                 .orElseThrow(() -> new ProjectNotFoundException(id));
         
-        projectMapper.updateEntity(projectDto, existingProject);
+        existingProject.setName(projectDto.getName());
+        existingProject.setDescription(projectDto.getDescription());
+        
         Project updatedProject = projectRepository.save(existingProject);
         return projectMapper.toDto(updatedProject);
     }

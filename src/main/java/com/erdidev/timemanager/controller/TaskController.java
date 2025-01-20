@@ -11,7 +11,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,25 +28,88 @@ public class TaskController {
     private final TaskService taskService;
 
     @GetMapping
-    @Operation(summary = "Get all tasks with pagination")
+    @Operation(
+        summary = "Get all tasks with pagination",
+        description = "Returns a paginated list of tasks. Sort options: createdAt, title, status, priority, dueDate"
+    )
     public ResponseEntity<Page<TaskDto>> getTasks(
-            @PageableDefault(size = 20) Pageable pageable) {
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+            
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+            
+            @Parameter(
+                description = "Sort field and direction (e.g., createdAt,desc or title,asc)",
+                example = "createdAt,desc"
+            )
+            @RequestParam(defaultValue = "createdAt,desc") String sort) {
+        
+        String[] sortParams = sort.split(",");
+        String sortField = sortParams[0];
+        String sortDirection = sortParams.length > 1 ? sortParams[1] : "desc";
+        
+        Direction direction = Direction.fromString(sortDirection);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+        
         return ResponseEntity.ok(taskService.getTasks(pageable));
     }
 
     @GetMapping("/project/{projectId}")
-    @Operation(summary = "Get tasks by project")
+    @Operation(
+        summary = "Get tasks by project",
+        description = "Returns a paginated list of tasks for a specific project. Sort options: createdAt, title, status, priority, dueDate"
+    )
     public ResponseEntity<Page<TaskDto>> getTasksByProject(
             @PathVariable Long projectId,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+            
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+            
+            @Parameter(
+                description = "Sort field and direction (e.g., createdAt,desc or title,asc)",
+                example = "createdAt,desc"
+            )
+            @RequestParam(defaultValue = "createdAt,desc") String sort) {
+        
+        String[] sortParams = sort.split(",");
+        String sortField = sortParams[0];
+        String sortDirection = sortParams.length > 1 ? sortParams[1] : "desc";
+        
+        Direction direction = Direction.fromString(sortDirection);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+        
         return ResponseEntity.ok(taskService.getTasksByProject(projectId, pageable));
     }
 
     @GetMapping("/category/{categoryId}")
-    @Operation(summary = "Get tasks by category")
+    @Operation(
+        summary = "Get tasks by category",
+        description = "Returns a paginated list of tasks for a specific category. Sort options: createdAt, title, status, priority, dueDate"
+    )
     public ResponseEntity<Page<TaskDto>> getTasksByCategory(
             @PathVariable Long categoryId,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+            
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+            
+            @Parameter(
+                description = "Sort field and direction (e.g., createdAt,desc or title,asc)",
+                example = "createdAt,desc"
+            )
+            @RequestParam(defaultValue = "createdAt,desc") String sort) {
+        
+        String[] sortParams = sort.split(",");
+        String sortField = sortParams[0];
+        String sortDirection = sortParams.length > 1 ? sortParams[1] : "desc";
+        
+        Direction direction = Direction.fromString(sortDirection);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+        
         return ResponseEntity.ok(taskService.getTasksByCategory(categoryId, pageable));
     }
 

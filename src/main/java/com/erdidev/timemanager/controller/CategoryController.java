@@ -9,7 +9,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,10 +26,31 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @GetMapping
-    @Operation(summary = "Get categories by project")
+    @Operation(
+        summary = "Get categories by project",
+        description = "Returns a paginated list of categories for a project. Sort options: createdAt, name"
+    )
     public ResponseEntity<Page<CategoryDto>> getCategories(
             @PathVariable Long projectId,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+            
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+            
+            @Parameter(
+                description = "Sort field and direction (e.g., createdAt,desc or name,asc)",
+                example = "createdAt,desc"
+            )
+            @RequestParam(defaultValue = "createdAt,desc") String sort) {
+        
+        String[] sortParams = sort.split(",");
+        String sortField = sortParams[0];
+        String sortDirection = sortParams.length > 1 ? sortParams[1] : "desc";
+        
+        Direction direction = Direction.fromString(sortDirection);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+        
         return ResponseEntity.ok(categoryService.getCategoriesByProject(projectId, pageable));
     }
 
