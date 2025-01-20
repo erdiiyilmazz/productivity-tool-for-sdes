@@ -3,22 +3,25 @@ package com.erdidev.timemanager.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Data
+@Getter
+@Setter
 @Entity
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Table(name = "task_attachments")
-@EqualsAndHashCode(callSuper = true)
 public class TaskAttachment extends BaseEntity {
-    private String fileName;
-    private String fileType;
-    private String url;
+    
+    @Column(nullable = false)
+    private String name;
+    
+    @Column(columnDefinition = "TEXT")
+    private String content;
+    
+    private String extension;
     
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private AttachmentType type;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_id")
+    @JoinColumn(name = "task_id", nullable = false)
     private Task task;
 } 

@@ -1,22 +1,27 @@
 package com.erdidev.timemanager.controller;
 
+import com.erdidev.timemanager.dto.CodeSnippetRequestDto;
+import com.erdidev.timemanager.dto.LinkRequestDto;
 import com.erdidev.timemanager.dto.TaskAttachmentDto;
 import com.erdidev.timemanager.model.AttachmentType;
 import com.erdidev.timemanager.service.TaskAttachmentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/tasks/{taskId}/attachments")
 @RequiredArgsConstructor
-@Tag(name = "Task Attachments", description = "APIs for managing task attachments")
+@Tag(name = "Task Attachment Management", description = "APIs for managing task attachments")
 public class TaskAttachmentController {
     private final TaskAttachmentService attachmentService;
 
@@ -58,5 +63,62 @@ public class TaskAttachmentController {
     public ResponseEntity<Void> deleteAllTaskAttachments(@PathVariable Long taskId) {
         attachmentService.deleteAllTaskAttachments(taskId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(value = "/upload/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+        summary = "Upload file attachment",
+        description = "Upload a file attachment. Name and extension will be extracted from file."
+    )
+    public ResponseEntity<TaskAttachmentDto> uploadFileAttachment(
+            @PathVariable Long taskId,
+            @Parameter(description = "File to upload")
+            @RequestPart MultipartFile file,
+            @Parameter(description = "Custom name (optional)")
+            @RequestParam(required = false) String name) {
+        
+        TaskAttachmentDto attachmentDto = new TaskAttachmentDto();
+        attachmentDto.setType(AttachmentType.FILE);
+        attachmentDto.setTaskId(taskId);
+        attachmentDto.setName(name);
+        
+        return ResponseEntity.ok(attachmentService.createAttachment(attachmentDto, file));
+    }
+
+    @PostMapping("/upload/code")
+    @Operation(
+        summary = "Upload code snippet",
+        description = "Add a code snippet with syntax highlighting support"
+    )
+    public ResponseEntity<TaskAttachmentDto> uploadCodeSnippet(
+            @PathVariable Long taskId,
+            @RequestBody CodeSnippetRequestDto request) {
+        
+        TaskAttachmentDto attachmentDto = new TaskAttachmentDto();
+        attachmentDto.setType(AttachmentType.CODE_SNIPPET);
+        attachmentDto.setName(request.getName());
+        attachmentDto.setContent(request.getCode());
+        attachmentDto.setExtension(request.getLanguage());
+        attachmentDto.setTaskId(taskId);
+        
+        return ResponseEntity.ok(attachmentService.createAttachment(attachmentDto, null));
+    }
+
+    @PostMapping("/upload/link")
+    @Operation(
+        summary = "Add link attachment",
+        description = "Add a URL link as attachment"
+    )
+    public ResponseEntity<TaskAttachmentDto> uploadLink(
+            @PathVariable Long taskId,
+            @RequestBody LinkRequestDto request) {
+        
+        TaskAttachmentDto attachmentDto = new TaskAttachmentDto();
+        attachmentDto.setType(AttachmentType.LINK);
+        attachmentDto.setName(request.getName());
+        attachmentDto.setContent(request.getUrl());
+        attachmentDto.setTaskId(taskId);
+        
+        return ResponseEntity.ok(attachmentService.createAttachment(attachmentDto, null));
     }
 } 

@@ -7,34 +7,33 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-@Data
+@Getter
+@Setter
 @Entity
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Table(name = "tasks")
-@EqualsAndHashCode(callSuper = true)
 public class Task extends BaseEntity {
-        @Column(nullable = false)
-        private String title;
-
-        @Column(length = 1000)
-        private String description;
-
-        @Enumerated(EnumType.STRING)
-        private TaskStatus status;
-
-        @ManyToOne(fetch = FetchType.LAZY)
-        @JoinColumn(name = "category_id")
-        private Category category;
-
-        @ManyToOne
-        private Project project;
-        
-        @Enumerated(EnumType.STRING)
-        private Priority priority;
-        private LocalDateTime dueDate;
-        
-        @OneToMany(cascade = CascadeType.ALL)
-        private Set<TaskAttachment> attachments = new HashSet<>();
+    
+    @Column(nullable = false)
+    private String title;
+    
+    private String description;
+    
+    @Enumerated(EnumType.STRING)
+    private TaskStatus status = TaskStatus.TODO;
+    
+    @Enumerated(EnumType.STRING)
+    private Priority priority = Priority.MEDIUM;
+    
+    private LocalDateTime dueDate;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id", nullable = false)
+    private Project project;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+    
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<TaskAttachment> attachments = new HashSet<>();
 } 
