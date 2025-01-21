@@ -115,22 +115,24 @@ public class TaskController {
 
     @GetMapping("/status/{status}")
     @Operation(summary = "Get tasks by status")
-    public ResponseEntity<List<TaskDto>> getTasksByStatus(
-            @PathVariable TaskStatus status) {
-        return ResponseEntity.ok(taskService.getTasksByStatus(status));
+    public ResponseEntity<Page<TaskDto>> getTasksByStatus(
+            @PathVariable TaskStatus status,
+            Pageable pageable) {
+        return ResponseEntity.ok(taskService.getTasksByStatus(status, pageable));
     }
 
     @GetMapping("/priority/{priority}")
     @Operation(summary = "Get tasks by priority")
-    public ResponseEntity<List<TaskDto>> getTasksByPriority(
-            @PathVariable Priority priority) {
-        return ResponseEntity.ok(taskService.getTasksByPriority(priority));
+    public ResponseEntity<Page<TaskDto>> getTasksByPriority(
+            @PathVariable Priority priority,
+            Pageable pageable) {
+        return ResponseEntity.ok(taskService.getTasksByPriority(priority, pageable));
     }
 
     @GetMapping("/overdue")
     @Operation(summary = "Get overdue tasks")
-    public ResponseEntity<List<TaskDto>> getOverdueTasks() {
-        return ResponseEntity.ok(taskService.getOverdueTasks());
+    public ResponseEntity<Page<TaskDto>> getOverdueTasks(Pageable pageable) {
+        return ResponseEntity.ok(taskService.getOverdueTasks(pageable));
     }
 
     @GetMapping("/search")

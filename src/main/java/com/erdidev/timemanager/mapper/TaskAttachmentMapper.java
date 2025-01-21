@@ -11,7 +11,7 @@ public interface TaskAttachmentMapper {
     @Mapping(target = "task", ignore = true)
     TaskAttachment toEntity(TaskAttachmentDto dto);
 
-    @Mapping(target = "taskId", source = "task.id")
+    @Mapping(source = "task.id", target = "taskId")
     TaskAttachmentDto toDto(TaskAttachment attachment);
 
     @Mapping(target = "task", ignore = true)
