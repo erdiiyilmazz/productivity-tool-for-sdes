@@ -9,6 +9,7 @@ import com.erdidev.timemanager.model.TaskAttachment;
 import com.erdidev.timemanager.model.AttachmentType;
 import com.erdidev.timemanager.repository.TaskAttachmentRepository;
 import com.erdidev.timemanager.repository.TaskRepository;
+import com.erdidev.timemanager.util.AttachmentValidationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,13 +19,11 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -112,12 +111,12 @@ public class TaskAttachmentService {
                 break;
                 
             case CODE_SNIPPET:
-                validateCodeSnippet(dto.getContent(), dto.getExtension());
+                AttachmentValidationUtil.validateCodeSnippet(dto.getContent());
                 attachment.setContent(dto.getContent());
                 break;
                 
             case LINK:
-                validateLink(dto.getContent());
+                AttachmentValidationUtil.validateLink(dto.getContent());
                 attachment.setContent(dto.getContent());
                 break;
         }
@@ -139,38 +138,34 @@ public class TaskAttachmentService {
     private void handleFileUpload(TaskAttachment attachment, MultipartFile file) {
         try {
             String fileName = StringUtils.cleanPath(file.getOriginalFilename());
-            String extension = fileName.substring(fileName.lastIndexOf(".") + 1);
             
-            if (!attachment.getType().isValidExtension(extension)) {
-                throw new IllegalArgumentException("Invalid file extension: " + extension);
+            // Validate file name and path
+            AttachmentValidationUtil.validateFileUpload(fileName);
+            
+            // Extract extension safely
+            String extension = "";
+            int lastDotIndex = fileName.lastIndexOf(".");
+            if (lastDotIndex > 0) {
+                extension = fileName.substring(lastDotIndex + 1).toLowerCase();
             }
+            
+            // Validate extension
+            AttachmentValidationUtil.validateExtension(extension, attachment.getType());
 
-            String storedFileName = UUID.randomUUID() + "." + extension;
+            // Generate safe filename with UUID
+            String storedFileName = UUID.randomUUID() + (extension.isEmpty() ? "" : "." + extension);
             Path targetLocation = Paths.get(uploadDir).resolve(storedFileName);
+            
+            // Validate path is within upload directory
+            if (!targetLocation.normalize().startsWith(Paths.get(uploadDir).normalize())) {
+                throw new SecurityException("Invalid file path");
+            }
             
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
             attachment.setContent(storedFileName);
             
         } catch (IOException ex) {
             throw new RuntimeException("Could not store file", ex);
-        }
-    }
-
-    private void validateCodeSnippet(String content, String extension) {
-        if (content == null || content.trim().isEmpty()) {
-            throw new IllegalArgumentException("Code snippet content cannot be empty");
-        }
-    }
-
-    private void validateLink(String url) {
-        if (!url.matches("^(http|https)://.*$")) {
-            throw new IllegalArgumentException("Invalid URL format");
-        }
-        
-        try {
-            URI.create(url).toURL();
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid URL");
         }
     }
 } 

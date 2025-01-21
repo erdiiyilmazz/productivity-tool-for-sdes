@@ -50,27 +50,23 @@ public class TaskService {
     }
 
     @Transactional(readOnly = true)
-    public List<TaskDto> getTasksByStatus(TaskStatus status) {
+    public Page<TaskDto> getTasksByStatus(TaskStatus status, Pageable pageable) {
         log.debug("Fetching tasks with status: {}", status);
-        return taskRepository.findByStatus(status).stream()
-                .map(taskMapper::toDto)
-                .collect(Collectors.toList());
+        return taskRepository.findByStatus(status, pageable)
+                .map(taskMapper::toDto);
     }
 
     @Transactional(readOnly = true)
-    public List<TaskDto> getTasksByPriority(Priority priority) {
-        log.debug("Fetching tasks with priority: {}", priority);
-        return taskRepository.findByPriority(priority).stream()
-                .map(taskMapper::toDto)
-                .collect(Collectors.toList());
+    public Page<TaskDto> getTasksByPriority(Priority priority, Pageable pageable) {
+        Page<Task> tasks = taskRepository.findByPriority(priority, pageable);
+        return tasks.map(taskMapper::toDto);
     }
 
     @Transactional(readOnly = true)
-    public List<TaskDto> getOverdueTasks() {
+    public Page<TaskDto> getOverdueTasks(Pageable pageable) {
         log.debug("Fetching overdue tasks");
-        return taskRepository.findByDueDateBefore(LocalDateTime.now()).stream()
-                .map(taskMapper::toDto)
-                .collect(Collectors.toList());
+        return taskRepository.findOverdueTasks(LocalDateTime.now(), pageable)
+                .map(taskMapper::toDto);
     }
 
     @Transactional(readOnly = true)
@@ -151,5 +147,11 @@ public class TaskService {
         return taskRepository.findByTitleContainingIgnoreCase(query).stream()
                 .map(taskMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TaskDto> searchTasks(String query, Pageable pageable) {
+        return taskRepository.searchTasks(query, pageable)
+                .map(taskMapper::toDto);
     }
 } 
