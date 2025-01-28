@@ -16,8 +16,8 @@ public class ScheduleDto extends BaseDto {
     
     @NotNull(message = "Scheduled time is required")
     private LocalDateTime scheduledTime;
-    
     private ScheduleStatus status;
-    private RecurrencePatternDto recurrencePattern;
     private String timeZone;
+    private String title;
+    private String description;
 } 

@@ -85,10 +85,9 @@ public class ScheduleService {
         
         existingSchedule.setScheduledTime(scheduleDto.getScheduledTime());
         existingSchedule.setStatus(scheduleDto.getStatus());
-        existingSchedule.setRecurrencePattern(
-            scheduleMapper.toEntity(scheduleDto).getRecurrencePattern()
-        );
         existingSchedule.setTimeZone(scheduleDto.getTimeZone());
+        existingSchedule.setTitle(scheduleDto.getTitle());
+        existingSchedule.setDescription(scheduleDto.getDescription());
         
         Schedule updatedSchedule = scheduleRepository.save(existingSchedule);
         return scheduleMapper.toDto(updatedSchedule);
@@ -97,9 +96,9 @@ public class ScheduleService {
     @Transactional
     public void deleteSchedule(Long id) {
         log.debug("Deleting schedule: {}", id);
-        if (!scheduleRepository.existsById(id)) {
-            throw new ScheduleNotFoundException(id);
-        }
+        Schedule schedule = scheduleRepository.findById(id)
+                .orElseThrow(() -> new ScheduleNotFoundException(id));
+        
         scheduleRepository.deleteById(id);
     }
 
@@ -122,18 +121,9 @@ public class ScheduleService {
         ScheduleDto scheduleDto = new ScheduleDto();
         scheduleDto.setTaskId(taskId);
         scheduleDto.setScheduledTime(scheduledTime);
-        scheduleDto.setRecurrencePattern(recurrence);
         scheduleDto.setStatus(ScheduleStatus.PENDING);
         
         return createSchedule(scheduleDto);
-    }
-
-    @Transactional
-    public ScheduleDto scheduleRecurringTask(Long taskId, RecurrencePatternDto recurrence) {
-        validateRecurrencePattern(recurrence);
-        
-        LocalDateTime nextOccurrence = calculateNextOccurrence(recurrence);
-        return scheduleTask(taskId, nextOccurrence, recurrence);
     }
 
     @Transactional

@@ -22,9 +22,12 @@ public class Schedule extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private ScheduleStatus status;
     
-    @Embedded
-    private RecurrencePattern recurrencePattern;
-    
     @Column
     private String timeZone;
+    
+    @Column
+    private String title;
+    
+    @Column
+    private String description;
 } 
