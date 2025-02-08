@@ -12,8 +12,9 @@ public class TaskAttachment extends BaseEntity {
     @Column(nullable = false)
     private String name;
     
-    @Column(columnDefinition = "TEXT")
-    private String content;
+    @Lob
+    @Column(columnDefinition = "BYTEA")
+    private byte[] content;
     
     private String extension;
     

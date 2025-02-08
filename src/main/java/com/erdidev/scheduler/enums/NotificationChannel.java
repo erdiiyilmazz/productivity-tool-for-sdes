@@ -1,8 +1,5 @@
 package com.erdidev.scheduler.enums;
 
 public enum NotificationChannel {
-    EMAIL,
-    SLACK,
-    SMS,
-    PUSH_NOTIFICATION
+    WEBSOCKET  // Only this one for now
 } 

@@ -8,6 +8,9 @@ import com.erdidev.scheduler.model.Schedule;
 import com.erdidev.scheduler.repository.ScheduleRepository;
 import com.erdidev.scheduler.exception.ScheduleNotFoundException;
 import com.erdidev.scheduler.mapper.ScheduleMapper;
+import com.erdidev.timemanager.model.Task;
+import com.erdidev.timemanager.repository.TaskRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -28,14 +31,28 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class ScheduleService {
     private final ScheduleRepository scheduleRepository;
+    private final TaskRepository taskRepository;
     private final ScheduleMapper scheduleMapper;
 
     @Transactional
     public ScheduleDto createSchedule(ScheduleDto scheduleDto) {
         log.debug("Creating schedule for task: {}", scheduleDto.getTaskId());
         
+        if (scheduleDto.getEndTime() == null) {
+            scheduleDto.setEndTime(scheduleDto.getScheduledTime().plusHours(1));
+        }
+        
         Schedule schedule = scheduleMapper.toEntity(scheduleDto);
-        schedule.setStatus(ScheduleStatus.PENDING);
+        
+        // Set the task
+        Task task = taskRepository.findById(scheduleDto.getTaskId())
+            .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+        schedule.setTask(task);
+        
+        // Set default status if not provided
+        if (schedule.getStatus() == null) {
+            schedule.setStatus(ScheduleStatus.PENDING);
+        }
         
         if (schedule.getTimeZone() == null) {
             schedule.setTimeZone(ZoneId.systemDefault().getId());

@@ -28,6 +28,14 @@ public class ScheduleController {
     @PostMapping
     @Operation(summary = "Create a new schedule")
     public ResponseEntity<ScheduleDto> createSchedule(@Valid @RequestBody ScheduleDto scheduleDto) {
+        if (scheduleDto.getEndTime() == null) {
+            scheduleDto.setEndTime(scheduleDto.getScheduledTime().plusHours(1));
+        }
+        
+        if (scheduleDto.getStartTime() == null) {
+            scheduleDto.setStartTime(scheduleDto.getScheduledTime());
+        }
+        
         return ResponseEntity.ok(scheduleService.createSchedule(scheduleDto));
     }
 

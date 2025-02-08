@@ -16,6 +16,9 @@ public class ScheduleDto extends BaseDto {
     
     @NotNull(message = "Scheduled time is required")
     private LocalDateTime scheduledTime;
+    @NotNull(message = "Start time is required")
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
     private ScheduleStatus status;
     private String timeZone;
     private String title;

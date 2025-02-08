@@ -2,6 +2,7 @@ package com.erdidev.scheduler.model;
 
 import com.erdidev.scheduler.enums.ScheduleStatus;
 import com.erdidev.timemanager.model.BaseEntity;
+import com.erdidev.timemanager.model.Task;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,15 +13,18 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class Schedule extends BaseEntity {
-    @Column(nullable = false)
-    private Long taskId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "task_id", nullable = false)
+    private Task task;
+    
+    @Column
+    private String description;
     
     @Column(nullable = false)
     private LocalDateTime scheduledTime;
     
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ScheduleStatus status;
+    private LocalDateTime startTime;
     
     @Column
     private String timeZone;
@@ -28,6 +32,10 @@ public class Schedule extends BaseEntity {
     @Column
     private String title;
     
-    @Column
-    private String description;
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ScheduleStatus status;
+    
+    @Column(nullable = false)
+    private LocalDateTime endTime;
 } 

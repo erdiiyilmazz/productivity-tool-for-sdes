@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="1" author="erdi">
+        <!-- Projects table -->
+        <createTable tableName="projects">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="text"/>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp"/>
+            <column name="version" type="bigint"/>
+            <column name="created_by" type="varchar(255)"/>
+            <column name="last_modified_by" type="varchar(255)"/>
+        </createTable>
+
+        <!-- Categories table -->
+        <createTable tableName="categories">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="text"/>
+            <column name="project_id" type="bigint">
+                <constraints foreignKeyName="fk_category_project" references="projects(id)"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp"/>
+            <column name="version" type="bigint"/>
+            <column name="created_by" type="varchar(255)"/>
+            <column name="last_modified_by" type="varchar(255)"/>
+        </createTable>
+
+        <!-- Tasks table -->
+        <createTable tableName="tasks">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="title" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="text"/>
+            <column name="status" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="priority" type="varchar(50)"/>
+            <column name="due_date" type="timestamp"/>
+            <column name="project_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_task_project" references="projects(id)"/>
+            </column>
+            <column name="category_id" type="bigint">
+                <constraints foreignKeyName="fk_task_category" references="categories(id)"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp"/>
+            <column name="version" type="bigint"/>
+            <column name="created_by" type="varchar(255)"/>
+            <column name="last_modified_by" type="varchar(255)"/>
+        </createTable>
+
+        <!-- Task Attachments table -->
+        <createTable tableName="task_attachments">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="task_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_task_attachment_task" references="tasks(id)"/>
+            </column>
+            <column name="name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content" type="bytea"/>
+            <column name="extension" type="varchar(10)"/>
+            <column name="type" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp"/>
+            <column name="version" type="bigint"/>
+            <column name="created_by" type="varchar(255)"/>
+            <column name="last_modified_by" type="varchar(255)"/>
+        </createTable>
+
+        <!-- Schedules table -->
+        <createTable tableName="schedule">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="task_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_schedule_task" references="tasks(id)"/>
+            </column>
+            <column name="description" type="text"/>
+            <column name="scheduled_time" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="time_zone" type="varchar(50)"/>
+            <column name="title" type="varchar(255)"/>
+            <column name="start_time" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="end_time" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="recurrence_pattern" type="varchar(255)"/>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp"/>
+            <column name="version" type="bigint"/>
+            <column name="created_by" type="varchar(255)"/>
+            <column name="last_modified_by" type="varchar(255)"/>
+        </createTable>
+
+        <!-- Reminders table -->
+        <createTable tableName="reminder">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="task_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_reminder_task" references="tasks(id)"/>
+            </column>
+            <column name="schedule_id" type="bigint">
+                <constraints nullable="true" foreignKeyName="fk_reminder_schedule" references="schedule(id)"/>
+            </column>
+            <column name="type" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reminder_time" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="message" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp"/>
+            <column name="version" type="bigint"/>
+            <column name="created_by" type="varchar(255)"/>
+            <column name="last_modified_by" type="varchar(255)"/>
+        </createTable>
+
+        <!-- Reminder Notification Channels table -->
+        <createTable tableName="reminder_notification_channels">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="reminder_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_reminder_notification_channels" references="reminder(id)"/>
+            </column>
+            <column name="notification_channels" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="channel_type" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="channel_details" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp"/>
+            <column name="version" type="bigint"/>
+            <column name="created_by" type="varchar(255)"/>
+            <column name="last_modified_by" type="varchar(255)"/>
+        </createTable>
+    </changeSet>
+</databaseChangeLog> 
