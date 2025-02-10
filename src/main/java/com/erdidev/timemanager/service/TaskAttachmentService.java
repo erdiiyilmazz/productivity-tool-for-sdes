@@ -27,6 +27,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Service
@@ -112,12 +113,12 @@ public class TaskAttachmentService {
                 
             case CODE_SNIPPET:
                 AttachmentValidationUtil.validateCodeSnippet(dto.getContent());
-                attachment.setContent(dto.getContent());
+                attachment.setContent(dto.getContent().getBytes(StandardCharsets.UTF_8));
                 break;
                 
             case LINK:
                 AttachmentValidationUtil.validateLink(dto.getContent());
-                attachment.setContent(dto.getContent());
+                attachment.setContent(dto.getContent().getBytes(StandardCharsets.UTF_8));
                 break;
         }
         
@@ -162,10 +163,33 @@ public class TaskAttachmentService {
             }
             
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-            attachment.setContent(storedFileName);
+            attachment.setContent(storedFileName.getBytes(StandardCharsets.UTF_8));
             
         } catch (IOException ex) {
             throw new RuntimeException("Could not store file", ex);
         }
+    }
+
+    private TaskAttachment createAttachment(TaskAttachmentDto dto, Task task) {
+        TaskAttachment attachment = attachmentMapper.toEntity(dto);
+        attachment.setTask(task);
+        
+        // Convert String content to byte[]
+        if (dto.getContent() != null) {
+            attachment.setContent(dto.getContent().getBytes(StandardCharsets.UTF_8));
+        }
+        
+        return attachmentRepository.save(attachment);
+    }
+
+    private void updateAttachment(TaskAttachment attachment, TaskAttachmentDto dto) {
+        attachmentMapper.updateEntity(dto, attachment);
+        
+        // Convert String content to byte[]
+        if (dto.getContent() != null) {
+            attachment.setContent(dto.getContent().getBytes(StandardCharsets.UTF_8));
+        }
+        
+        attachmentRepository.save(attachment);
     }
 } 
