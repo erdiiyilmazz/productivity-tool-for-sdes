@@ -23,12 +23,18 @@ import java.util.stream.Collectors;
 
 import com.erdidev.scheduler.service.notification.NotificationStrategy;
 import com.erdidev.scheduler.model.ReminderNotificationChannel;
+import com.erdidev.scheduler.model.Schedule;
+import com.erdidev.scheduler.repository.ScheduleRepository;
+import com.erdidev.scheduler.exception.NotificationDeliveryException;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReminderService {
     private final ReminderRepository reminderRepository;
+    private final ScheduleRepository scheduleRepository;
     private final ReminderMapper reminderMapper;
     private final NotificationStrategy notificationStrategy;
     @Autowired
@@ -37,6 +43,51 @@ public class ReminderService {
     @Transactional
     public ReminderDto createReminder(ReminderDto reminderDto) {
         log.debug("Creating reminder for schedule: {}", reminderDto.getScheduleId());
+        
+        // Validate schedule exists
+        Schedule schedule = scheduleRepository.findById(reminderDto.getScheduleId())
+            .orElseThrow(() -> new EntityNotFoundException(
+                "Schedule not found with id: " + reminderDto.getScheduleId()));
+        
+        // Time validations
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Europe/Istanbul"));  // Use Istanbul timezone
+        
+        // 1. Reminder time should be in the future
+        if (reminderDto.getReminderTime().isBefore(now)) {
+            throw new IllegalArgumentException("Reminder time must be in the future. " +
+                "Current time: " + now + ", Reminder time: " + reminderDto.getReminderTime());
+        }
+        
+        // Convert reminder time to LocalDateTime for storage
+        LocalDateTime reminderLocalTime = reminderDto.getReminderTime().toLocalDateTime();
+        
+        // 2. Reminder time should be before schedule time
+        if (reminderLocalTime.isAfter(schedule.getScheduledTime())) {
+            throw new IllegalArgumentException(
+                "Reminder time must be before schedule time: " + schedule.getScheduledTime());
+        }
+        
+        // 3. If task has due date, reminder should be before that
+        if (schedule.getTask().getDueDate() != null && 
+            reminderLocalTime.isAfter(schedule.getTask().getDueDate())) {
+            throw new IllegalArgumentException(
+                "Reminder time cannot be after task due date: " + schedule.getTask().getDueDate());
+        }
+        
+        // 4. Validate minimum time gap (e.g., at least 1 minute before schedule)
+        Duration timeUntilSchedule = Duration.between(
+            reminderLocalTime, 
+            schedule.getScheduledTime()
+        );
+        if (timeUntilSchedule.toMinutes() < 1) {
+            throw new IllegalArgumentException(
+                "Reminder must be set at least 1 minute before schedule time");
+        }
+        
+        // Set default values
+        if (reminderDto.getStatus() == null) {
+            reminderDto.setStatus(ReminderStatus.PENDING);
+        }
         
         Reminder reminder = reminderMapper.toEntity(reminderDto);
         
@@ -63,6 +114,12 @@ public class ReminderService {
         }
         
         Reminder savedReminder = reminderRepository.save(reminder);
+        
+        log.info("Created reminder {} for schedule {} at time {}", 
+            savedReminder.getId(), 
+            schedule.getId(), 
+            reminderDto.getReminderTime());
+            
         return reminderMapper.toDto(savedReminder);
     }
 
@@ -73,7 +130,7 @@ public class ReminderService {
         Reminder existingReminder = reminderRepository.findById(id)
                 .orElseThrow(() -> new ReminderNotFoundException(id));
         
-        existingReminder.setReminderTime(reminderDto.getReminderTime());
+        existingReminder.setReminderTime(reminderDto.getReminderTime().toLocalDateTime());
         
         Reminder updatedReminder = reminderRepository.save(existingReminder);
         return reminderMapper.toDto(updatedReminder);
@@ -92,25 +149,23 @@ public class ReminderService {
     }
 
     @Transactional
-    public void processReminder(Long reminderId) {
-        Reminder reminder = reminderRepository.findById(reminderId)
-                .orElseThrow(() -> new ReminderNotFoundException(reminderId));
+    public void processReminder(Long id) {
+        log.info("Processing reminder: {}", id);
         
+        Reminder reminder = reminderRepository.findById(id)
+            .orElseThrow(() -> new ReminderNotFoundException(id));
+            
         try {
-            String message = String.format("Reminder for Schedule #%d at %s",
-                reminder.getScheduleId(),
-                reminder.getReminderTime());
+            log.debug("Sending notification for reminder: {}", id);
+            notificationStrategy.sendNotification(reminder.getMessage());
             
-            notificationStrategy.sendNotification(message);
-            
-            reminder.setStatus(ReminderStatus.SENT);
+            // Update reminder status
             reminderRepository.save(reminder);
             
+            log.info("Successfully processed reminder: {}", id);
         } catch (Exception e) {
-            log.error("Failed to process reminder: {}", reminderId, e);
-            reminder.setStatus(ReminderStatus.FAILED);
-            reminderRepository.save(reminder);
-            throw e;
+            log.error("Failed to process reminder: {}", id, e);
+            throw new NotificationDeliveryException("Failed to process reminder: " + id, e);
         }
     }
 } 

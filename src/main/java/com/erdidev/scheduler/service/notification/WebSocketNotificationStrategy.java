@@ -18,14 +18,20 @@ public class WebSocketNotificationStrategy implements NotificationStrategy {
     @Override
     public void sendNotification(String message) {
         try {
+            log.info("Attempting to send WebSocket notification: {}", message);
+            
             NotificationMessage notification = new NotificationMessage(
                 String.format("🔔 REMINDER: %s\n⏰ Time: %s", 
                     message,
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
                 )
             );
+            
             messagingTemplate.convertAndSend("/topic/notifications", notification);
+            log.info("Successfully sent WebSocket notification");
+            
         } catch (Exception e) {
+            log.error("Failed to send WebSocket notification", e);
             throw new NotificationDeliveryException("Failed to send WebSocket notification", e);
         }
     }

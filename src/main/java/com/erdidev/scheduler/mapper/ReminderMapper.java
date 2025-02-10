@@ -6,19 +6,23 @@ import com.erdidev.scheduler.model.ReminderNotificationChannel;
 import com.erdidev.scheduler.enums.NotificationChannel;
 import org.mapstruct.*;
 
+import java.time.ZoneId;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, 
+        imports = {ZoneId.class})
 public interface ReminderMapper {
     
     @Mapping(target = "task", ignore = true)
     @Mapping(target = "notificationChannels", ignore = true)
-    Reminder toEntity(ReminderDto reminderDto);
+    @Mapping(target = "reminderTime", expression = "java(dto.getReminderTime().toLocalDateTime())")
+    Reminder toEntity(ReminderDto dto);
 
     @Mapping(source = "task.id", target = "taskId")
-    @Mapping(target = "notificationChannels", expression = "java(mapChannelsToDto(reminder.getNotificationChannels()))")
-    ReminderDto toDto(Reminder reminder);
+    @Mapping(target = "notificationChannels", expression = "java(mapChannelsToDto(entity.getNotificationChannels()))")
+    @Mapping(target = "reminderTime", expression = "java(entity.getReminderTime().atZone(ZoneId.systemDefault()))")
+    ReminderDto toDto(Reminder entity);
 
     @AfterMapping
     default void mapNotificationChannels(@MappingTarget Reminder reminder, ReminderDto dto) {

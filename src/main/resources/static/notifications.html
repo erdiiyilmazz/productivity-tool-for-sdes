@@ -7,33 +7,48 @@
 </head>
 <body>
     <h2>Notifications</h2>
+    <div id="status">Status: Connecting...</div>
     <div id="notifications"></div>
+    <div id="debug"></div>
 
     <script>
         let stompClient = null;
+        const statusDiv = document.getElementById('status');
+        const debugDiv = document.getElementById('debug');
+        
+        function addDebugMessage(message) {
+            const div = document.createElement('div');
+            div.textContent = new Date().toISOString() + ': ' + message;
+            debugDiv.insertBefore(div, debugDiv.firstChild);
+        }
         
         function connect() {
+            statusDiv.textContent = 'Status: Connecting...';
+            addDebugMessage('Attempting to connect...');
+            
             const socket = new SockJS('http://localhost:8081/ws');
             stompClient = Stomp.over(socket);
             
-            // Enable debug mode
             stompClient.debug = function(str) {
-                console.log(str);
+                addDebugMessage(str);
             };
             
             stompClient.connect({}, function(frame) {
-                console.log('Connected: ' + frame);
+                statusDiv.textContent = 'Status: Connected';
+                addDebugMessage('Connected: ' + frame);
                 
                 stompClient.subscribe('/topic/notifications', function(notification) {
+                    addDebugMessage('Received notification');
                     const message = JSON.parse(notification.body);
                     const notificationDiv = document.getElementById('notifications');
                     const messageElement = document.createElement('div');
                     messageElement.textContent = message.content;
                     messageElement.className = 'notification-message';
-                    notificationDiv.appendChild(messageElement);
+                    notificationDiv.insertBefore(messageElement, notificationDiv.firstChild);
                 });
             }, function(error) {
-                console.error('Connection error: ' + error);
+                statusDiv.textContent = 'Status: Error - Reconnecting...';
+                addDebugMessage('Connection error: ' + error);
                 setTimeout(connect, 5000);
             });
         }
@@ -48,6 +63,12 @@
     </script>
 
     <style>
+        #status {
+            padding: 10px;
+            margin: 5px;
+            background-color: #f8f8f8;
+            border-left: 4px solid #2196F3;
+        }
         .notification-message {
             padding: 10px;
             margin: 5px;
@@ -55,6 +76,15 @@
             border-left: 4px solid #4CAF50;
             white-space: pre-line;
             font-family: system-ui, -apple-system, sans-serif;
+        }
+        #debug {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f8f8;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
         }
     </style>
 </body>

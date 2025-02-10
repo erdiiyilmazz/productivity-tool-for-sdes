@@ -1,6 +1,7 @@
 package com.erdidev.scheduler.service;
 
 import com.erdidev.scheduler.dto.RecurrencePatternDto;
+import com.erdidev.scheduler.dto.ReminderDto;
 import com.erdidev.scheduler.dto.ScheduleDto;
 import com.erdidev.scheduler.enums.RecurrenceType;
 import com.erdidev.scheduler.enums.ScheduleStatus;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,23 +35,55 @@ public class ScheduleService {
     private final ScheduleRepository scheduleRepository;
     private final TaskRepository taskRepository;
     private final ScheduleMapper scheduleMapper;
+    private final ReminderService reminderService;
 
     @Transactional
     public ScheduleDto createSchedule(ScheduleDto scheduleDto) {
         log.debug("Creating schedule for task: {}", scheduleDto.getTaskId());
         
+        // Get the task
+        Task task = taskRepository.findById(scheduleDto.getTaskId())
+            .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+        
+        LocalDateTime now = LocalDateTime.now();
+        
+        // Time validations
+        // 1. Schedule time should be in the future
+        if (scheduleDto.getScheduledTime().isBefore(now)) {
+            throw new IllegalArgumentException("Schedule time must be in the future");
+        }
+        
+        // 2. Validate against task due date
+        if (task.getDueDate() != null && 
+            scheduleDto.getScheduledTime().isAfter(task.getDueDate())) {
+            throw new IllegalArgumentException(
+                "Schedule time cannot be after task due date: " + task.getDueDate());
+        }
+        
+        // 3. Validate start and end times
+        if (scheduleDto.getStartTime() != null && 
+            scheduleDto.getStartTime().isAfter(scheduleDto.getScheduledTime())) {
+            throw new IllegalArgumentException("Start time cannot be after scheduled time");
+        }
+        
+        // Set default times
+        if (scheduleDto.getStartTime() == null) {
+            scheduleDto.setStartTime(scheduleDto.getScheduledTime());
+        }
+        
         if (scheduleDto.getEndTime() == null) {
             scheduleDto.setEndTime(scheduleDto.getScheduledTime().plusHours(1));
         }
         
-        Schedule schedule = scheduleMapper.toEntity(scheduleDto);
+        // 4. Validate end time
+        if (scheduleDto.getEndTime().isBefore(scheduleDto.getStartTime())) {
+            throw new IllegalArgumentException("End time cannot be before start time");
+        }
         
-        // Set the task
-        Task task = taskRepository.findById(scheduleDto.getTaskId())
-            .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+        Schedule schedule = scheduleMapper.toEntity(scheduleDto);
         schedule.setTask(task);
         
-        // Set default status if not provided
+        // Set defaults
         if (schedule.getStatus() == null) {
             schedule.setStatus(ScheduleStatus.PENDING);
         }
@@ -59,6 +93,11 @@ public class ScheduleService {
         }
         
         Schedule savedSchedule = scheduleRepository.save(schedule);
+        log.info("Created schedule {} for task {} at time {}", 
+            savedSchedule.getId(), 
+            task.getId(), 
+            scheduleDto.getScheduledTime());
+        
         return scheduleMapper.toDto(savedSchedule);
     }
 
@@ -224,5 +263,59 @@ public class ScheduleService {
         LocalDateTime candidate = now.withDayOfMonth(dayOfMonth);
         return candidate.isBefore(now) ? 
                 candidate.plusMonths(1) : candidate;
+    }
+
+    @Scheduled(fixedRate = 30000) // Every 30 seconds
+    @Transactional
+    public void checkAndProcessDueReminders() {
+        try {
+            log.debug("Checking for due schedules and reminders...");
+            LocalDateTime now = LocalDateTime.now();
+            
+            // Find schedules due in the next minute
+            List<Schedule> dueSchedules = scheduleRepository
+                .findByStatusAndScheduledTimeBetween(
+                    ScheduleStatus.PENDING,
+                    now,
+                    now.plusMinutes(1)
+                );
+            
+            if (!dueSchedules.isEmpty()) {
+                log.info("Found {} due schedules", dueSchedules.size());
+                
+                for (Schedule schedule : dueSchedules) {
+                    try {
+                        // Process reminders for this schedule
+                        List<ReminderDto> reminders = reminderService.getDueReminders(Duration.ofMinutes(1))
+                            .stream()
+                            .filter(r -> r.getScheduleId().equals(schedule.getId()))
+                            .toList();
+                        
+                        log.debug("Processing {} reminders for schedule {}", 
+                            reminders.size(), schedule.getId());
+                            
+                        for (ReminderDto reminder : reminders) {
+                            try {
+                                reminderService.processReminder(reminder.getId());
+                                log.info("Successfully processed reminder {} for schedule {}", 
+                                    reminder.getId(), schedule.getId());
+                            } catch (Exception e) {
+                                log.error("Failed to process reminder {} for schedule {}", 
+                                    reminder.getId(), schedule.getId(), e);
+                            }
+                        }
+                        
+                        // Update schedule status
+                        schedule.setStatus(ScheduleStatus.COMPLETED);
+                        scheduleRepository.save(schedule);
+                        
+                    } catch (Exception e) {
+                        log.error("Error processing schedule {}", schedule.getId(), e);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error in reminder check scheduler", e);
+        }
     }
 } 
