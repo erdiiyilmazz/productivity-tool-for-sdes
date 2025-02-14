@@ -10,7 +10,9 @@ import com.erdidev.scheduler.repository.ScheduleRepository;
 import com.erdidev.scheduler.exception.ScheduleNotFoundException;
 import com.erdidev.scheduler.mapper.ScheduleMapper;
 import com.erdidev.timemanager.model.Task;
+import com.erdidev.timemanager.model.TaskStatus;
 import com.erdidev.timemanager.repository.TaskRepository;
+import com.erdidev.timemanager.service.TaskService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +38,7 @@ public class ScheduleService {
     private final TaskRepository taskRepository;
     private final ScheduleMapper scheduleMapper;
     private final ReminderService reminderService;
+    private final TaskService taskService;
 
     @Transactional
     public ScheduleDto createSchedule(ScheduleDto scheduleDto) {
@@ -98,6 +101,24 @@ public class ScheduleService {
             task.getId(), 
             scheduleDto.getScheduledTime());
         
+        // Update task status when schedule is created
+        if (task.getStatus() == TaskStatus.TODO) {
+            task.setStatus(TaskStatus.SCHEDULED);
+            taskRepository.save(task);
+        }
+
+        // Create default reminder if not specified
+        if (scheduleDto.getCreateDefaultReminder()) {
+            ReminderDto reminderDto = new ReminderDto();
+            reminderDto.setReminderTime(
+                scheduleDto.getScheduledTime()
+                    .minusMinutes(15)
+                    .atZone(ZoneId.systemDefault())  // Convert to ZonedDateTime
+            );
+            reminderDto.setMessage("Task scheduled to start in 15 minutes: " + task.getTitle());
+            reminderService.createReminder(reminderDto);
+        }
+
         return scheduleMapper.toDto(savedSchedule);
     }
 
@@ -265,57 +286,31 @@ public class ScheduleService {
                 candidate.plusMonths(1) : candidate;
     }
 
-    @Scheduled(fixedRate = 30000) // Every 30 seconds
+    @Scheduled(fixedRate = 60000) // Every minute
     @Transactional
-    public void checkAndProcessDueReminders() {
-        try {
-            log.debug("Checking for due schedules and reminders...");
-            LocalDateTime now = LocalDateTime.now();
-            
-            // Find schedules due in the next minute
-            List<Schedule> dueSchedules = scheduleRepository
-                .findByStatusAndScheduledTimeBetween(
-                    ScheduleStatus.PENDING,
-                    now,
-                    now.plusMinutes(1)
-                );
-            
-            if (!dueSchedules.isEmpty()) {
-                log.info("Found {} due schedules", dueSchedules.size());
-                
-                for (Schedule schedule : dueSchedules) {
-                    try {
-                        // Process reminders for this schedule
-                        List<ReminderDto> reminders = reminderService.getDueReminders(Duration.ofMinutes(1))
-                            .stream()
-                            .filter(r -> r.getScheduleId().equals(schedule.getId()))
-                            .toList();
-                        
-                        log.debug("Processing {} reminders for schedule {}", 
-                            reminders.size(), schedule.getId());
-                            
-                        for (ReminderDto reminder : reminders) {
-                            try {
-                                reminderService.processReminder(reminder.getId());
-                                log.info("Successfully processed reminder {} for schedule {}", 
-                                    reminder.getId(), schedule.getId());
-                            } catch (Exception e) {
-                                log.error("Failed to process reminder {} for schedule {}", 
-                                    reminder.getId(), schedule.getId(), e);
-                            }
-                        }
-                        
-                        // Update schedule status
-                        schedule.setStatus(ScheduleStatus.COMPLETED);
-                        scheduleRepository.save(schedule);
-                        
-                    } catch (Exception e) {
-                        log.error("Error processing schedule {}", schedule.getId(), e);
-                    }
+    public void processSchedules() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Schedule> dueSchedules = scheduleRepository
+            .findByStatusAndScheduledTimeBefore(ScheduleStatus.PENDING, now);
+
+        for (Schedule schedule : dueSchedules) {
+            try {
+                // Update task status when schedule time arrives
+                Task task = schedule.getTask();
+                if (task.getStatus() == TaskStatus.SCHEDULED) {
+                    task.setStatus(TaskStatus.IN_PROGRESS);
+                    taskRepository.save(task);
                 }
+
+                // Mark schedule as completed
+                schedule.setStatus(ScheduleStatus.COMPLETED);
+                scheduleRepository.save(schedule);
+
+                log.info("Processed schedule {} for task {}", 
+                    schedule.getId(), task.getId());
+            } catch (Exception e) {
+                log.error("Error processing schedule {}", schedule.getId(), e);
             }
-        } catch (Exception e) {
-            log.error("Error in reminder check scheduler", e);
         }
     }
 } 
