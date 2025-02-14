@@ -5,11 +5,13 @@ import com.erdidev.timemanager.dto.BaseDto;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
+@Schema(description = "Schedule Data Transfer Object")
 public class ScheduleDto extends BaseDto {
     @NotNull(message = "Task ID is required")
     private Long taskId;
@@ -23,4 +25,7 @@ public class ScheduleDto extends BaseDto {
     private String timeZone;
     private String title;
     private String description;
+
+    @Schema(description = "Whether to create a default reminder", example = "true")
+    private Boolean createDefaultReminder = false;  // Default to false
 } 

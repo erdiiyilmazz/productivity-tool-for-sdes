@@ -13,6 +13,10 @@
 
     <script>
         let stompClient = null;
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT_ATTEMPTS = 5;
+        const RECONNECT_DELAY = 5000; // 5 seconds
+        
         const statusDiv = document.getElementById('status');
         const debugDiv = document.getElementById('debug');
         
@@ -23,34 +27,49 @@
         }
         
         function connect() {
-            statusDiv.textContent = 'Status: Connecting...';
-            addDebugMessage('Attempting to connect...');
+            if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                statusDiv.textContent = 'Status: Failed to connect after multiple attempts';
+                return;
+            }
             
-            const socket = new SockJS('http://localhost:8081/ws');
+            statusDiv.textContent = 'Status: Connecting...';
+            addDebugMessage('Attempting to connect... (Attempt ' + (reconnectAttempts + 1) + ')');
+            
+            const socket = new SockJS('/ws');  // Remove hardcoded URL
             stompClient = Stomp.over(socket);
             
-            stompClient.debug = function(str) {
-                addDebugMessage(str);
-            };
+            // Disable heartbeat to reduce traffic
+            stompClient.heartbeat.outgoing = 0;
+            stompClient.heartbeat.incoming = 0;
             
-            stompClient.connect({}, function(frame) {
-                statusDiv.textContent = 'Status: Connected';
-                addDebugMessage('Connected: ' + frame);
-                
-                stompClient.subscribe('/topic/notifications', function(notification) {
-                    addDebugMessage('Received notification');
-                    const message = JSON.parse(notification.body);
-                    const notificationDiv = document.getElementById('notifications');
-                    const messageElement = document.createElement('div');
-                    messageElement.textContent = message.content;
-                    messageElement.className = 'notification-message';
-                    notificationDiv.insertBefore(messageElement, notificationDiv.firstChild);
-                });
-            }, function(error) {
-                statusDiv.textContent = 'Status: Error - Reconnecting...';
-                addDebugMessage('Connection error: ' + error);
-                setTimeout(connect, 5000);
-            });
+            // Disable debug logs
+            stompClient.debug = null;
+            
+            stompClient.connect({}, 
+                frame => {
+                    reconnectAttempts = 0; // Reset on successful connection
+                    statusDiv.textContent = 'Status: Connected';
+                    addDebugMessage('Connected: ' + frame);
+
+                    stompClient.subscribe('/topic/notifications', notification => {
+                        addDebugMessage('Received notification');
+                        const message = JSON.parse(notification.body);
+                        const notificationDiv = document.getElementById('notifications');
+                        const messageElement = document.createElement('div');
+                        messageElement.textContent = message.content;
+                        messageElement.className = 'notification-message';
+                        notificationDiv.insertBefore(messageElement, notificationDiv.firstChild);
+                    });
+                }, 
+                error => {
+                    statusDiv.textContent = 'Status: Connection error - Retrying...';
+                    addDebugMessage('Connection error: ' + error);
+                    
+                    // Increment attempts and try to reconnect
+                    reconnectAttempts++;
+                    setTimeout(connect, RECONNECT_DELAY);
+                }
+            );
         }
 
         connect();
