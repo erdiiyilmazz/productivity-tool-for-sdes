@@ -1,7 +1,7 @@
 package com.erdidev.scheduler.dto;
 
 import com.erdidev.scheduler.enums.ScheduleStatus;
-import com.erdidev.timemanager.dto.BaseDto;
+import com.erdidev.taskmanager.dto.BaseDto;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
