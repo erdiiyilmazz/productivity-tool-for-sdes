@@ -36,4 +36,13 @@ public class Task extends BaseEntity {
     
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<TaskAttachment> attachments = new HashSet<>();
+    
+    @Column(name = "owner_id", nullable = false)
+    private Long ownerId;
+    
+    @Column(name = "assignee_id")  // Optional - can be null if unassigned
+    private Long assigneeId;
+    
+    @Column(name = "creator_id", nullable = false)
+    private Long creatorId;
 } 

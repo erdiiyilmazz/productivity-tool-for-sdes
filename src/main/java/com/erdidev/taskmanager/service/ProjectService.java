@@ -5,6 +5,7 @@ import com.erdidev.taskmanager.exception.ProjectNotFoundException;
 import com.erdidev.taskmanager.mapper.ProjectMapper;
 import com.erdidev.taskmanager.model.Project;
 import com.erdidev.taskmanager.repository.ProjectRepository;
+import com.erdidev.common.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -41,6 +42,7 @@ public class ProjectService {
     public ProjectDto createProject(ProjectDto projectDto) {
         log.debug("Creating project: {}", projectDto);
         Project project = projectMapper.toEntity(projectDto);
+        project.setOwnerId(SecurityUtils.getCurrentUserId());
         Project savedProject = projectRepository.save(project);
         return projectMapper.toDto(savedProject);
     }

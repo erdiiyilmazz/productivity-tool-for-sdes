@@ -22,4 +22,7 @@ public class Category extends BaseEntity {
 
     @OneToMany(mappedBy = "category")
     private Set<Task> tasks = new HashSet<>();
+
+    @Column(name = "owner_id", nullable = false)
+    private Long ownerId;
 } 

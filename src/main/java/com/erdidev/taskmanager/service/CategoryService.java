@@ -8,6 +8,7 @@ import com.erdidev.taskmanager.model.Category;
 import com.erdidev.taskmanager.model.Project;
 import com.erdidev.taskmanager.repository.CategoryRepository;
 import com.erdidev.taskmanager.repository.ProjectRepository;
+import com.erdidev.common.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -66,14 +67,15 @@ public class CategoryService {
 
     @Transactional
     public CategoryDto createCategory(Long projectId, CategoryDto categoryDto) {
-        log.debug("Creating category for project id: {}", projectId);
+        log.debug("Creating category for project {}: {}", projectId, categoryDto);
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
         
         Category category = categoryMapper.toEntity(categoryDto);
         category.setProject(project);
-        Category savedCategory = categoryRepository.save(category);
-        return categoryMapper.toDto(savedCategory);
+        category.setOwnerId(SecurityUtils.getCurrentUserId());
+        
+        return categoryMapper.toDto(categoryRepository.save(category));
     }
 
     @Transactional

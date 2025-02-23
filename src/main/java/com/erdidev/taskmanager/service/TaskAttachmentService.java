@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 
+import com.erdidev.common.util.SecurityUtils;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -73,6 +75,12 @@ public class TaskAttachmentService {
 
         TaskAttachment attachment = attachmentMapper.toEntity(attachmentDto);
         attachment.setTask(task);
+        attachment.setOwnerId(SecurityUtils.getCurrentUserId());
+        
+        // Convert content to bytes
+        if (attachmentDto.getContent() != null) {
+            attachment.setContent(attachmentDto.getContent().getBytes(StandardCharsets.UTF_8));
+        }
         
         TaskAttachment savedAttachment = attachmentRepository.save(attachment);
         return attachmentMapper.toDto(savedAttachment);
@@ -97,33 +105,28 @@ public class TaskAttachmentService {
     }
 
     @Transactional
-    public TaskAttachmentDto createAttachment(TaskAttachmentDto dto, MultipartFile file) {
-        validateAttachment(dto, file);
-
-        Task task = taskRepository.findById(dto.getTaskId())
-                .orElseThrow(() -> new TaskNotFoundException(dto.getTaskId()));
+    public TaskAttachmentDto createAttachment(TaskAttachmentDto attachmentDto, MultipartFile file) {
+        validateAttachment(attachmentDto, file);
         
-        TaskAttachment attachment = attachmentMapper.toEntity(dto);
+        Task task = taskRepository.findById(attachmentDto.getTaskId())
+                .orElseThrow(() -> new TaskNotFoundException(attachmentDto.getTaskId()));
+        
+        TaskAttachment attachment = attachmentMapper.toEntity(attachmentDto);
         attachment.setTask(task);
+        attachment.setOwnerId(SecurityUtils.getCurrentUserId());
         
-        switch (dto.getType()) {
-            case FILE:
-                handleFileUpload(attachment, file);
-                break;
-                
-            case CODE_SNIPPET:
-                AttachmentValidationUtil.validateCodeSnippet(dto.getContent());
-                attachment.setContent(dto.getContent().getBytes(StandardCharsets.UTF_8));
-                break;
-                
-            case LINK:
-                AttachmentValidationUtil.validateLink(dto.getContent());
-                attachment.setContent(dto.getContent().getBytes(StandardCharsets.UTF_8));
-                break;
+        // Convert content to bytes based on type
+        switch (attachmentDto.getType()) {
+            case FILE -> handleFileUpload(attachment, file);
+            case CODE_SNIPPET, LINK -> {
+                String content = attachmentDto.getContent();
+                if (content != null) {
+                    attachment.setContent(content.getBytes(StandardCharsets.UTF_8));
+                }
+            }
         }
         
-        TaskAttachment savedAttachment = attachmentRepository.save(attachment);
-        return attachmentMapper.toDto(savedAttachment);
+        return attachmentMapper.toDto(attachmentRepository.save(attachment));
     }
 
     private void validateAttachment(TaskAttachmentDto dto, MultipartFile file) {

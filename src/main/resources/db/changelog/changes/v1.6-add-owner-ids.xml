@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+
+    <changeSet id="1.6" author="erdidev">
+        <!-- Add owner_id columns -->
+        <addColumn tableName="tasks">
+            <column name="owner_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        
+        <addColumn tableName="categories">
+            <column name="owner_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        
+        <addColumn tableName="task_attachments">
+            <column name="owner_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <!-- Add foreign key constraints -->
+        <addForeignKeyConstraint baseTableName="tasks" 
+                                baseColumnNames="owner_id" 
+                                constraintName="fk_task_owner" 
+                                referencedTableName="users"
+                                referencedColumnNames="id"/>
+                                
+        <addForeignKeyConstraint baseTableName="categories" 
+                                baseColumnNames="owner_id" 
+                                constraintName="fk_category_owner" 
+                                referencedTableName="users"
+                                referencedColumnNames="id"/>
+                                
+        <addForeignKeyConstraint baseTableName="task_attachments" 
+                                baseColumnNames="owner_id" 
+                                constraintName="fk_attachment_owner" 
+                                referencedTableName="users"
+                                referencedColumnNames="id"/>
+    </changeSet>
+</databaseChangeLog> 

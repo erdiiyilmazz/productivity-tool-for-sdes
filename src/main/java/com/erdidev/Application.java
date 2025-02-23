@@ -9,15 +9,18 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(scanBasePackages = {
         "com.erdidev.taskmanager",
     "com.erdidev.common",
-    "com.erdidev.scheduler"
+    "com.erdidev.scheduler",
+    "com.erdidev.authmanager"
 })
 @EntityScan(basePackages = {
     "com.erdidev.taskmanager.model",
-    "com.erdidev.scheduler.model"
+    "com.erdidev.scheduler.model",
+    "com.erdidev.authmanager.model"
 })
 @EnableJpaRepositories(basePackages = {
         "com.erdidev.taskmanager.repository",
-    "com.erdidev.scheduler.repository"
+    "com.erdidev.scheduler.repository",
+    "com.erdidev.authmanager.repository"
 })
 @EnableScheduling
 public class Application {

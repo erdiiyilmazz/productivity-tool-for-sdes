@@ -7,6 +7,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -14,7 +15,8 @@ import java.util.Map;
 import java.util.Set;
 
 @Slf4j
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.erdidev.taskmanager")
+@Component("taskManagerExceptionHandler")
 public class GlobalExceptionHandler {
 
     private static final Set<String> VALID_PROJECT_SORT_FIELDS = 

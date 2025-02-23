@@ -24,4 +24,6 @@ public class TaskDto extends BaseDto {
     private LocalDateTime dueDate;
     private Long categoryId;
     private Long projectId;
+    private Long ownerId;
+    private Long assigneeId;
 } 

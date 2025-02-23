@@ -7,6 +7,7 @@ import com.erdidev.taskmanager.exception.TaskNotFoundException;
 import com.erdidev.taskmanager.mapper.TaskMapper;
 import com.erdidev.taskmanager.model.*;
 import com.erdidev.taskmanager.repository.*;
+import com.erdidev.common.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -82,6 +83,15 @@ public class TaskService {
         log.debug("Creating task: {}", taskDto);
         Task task = taskMapper.toEntity(taskDto);
         
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        task.setOwnerId(currentUserId);
+        task.setCreatorId(currentUserId);
+        
+        // Set assignee if provided in DTO
+        if (taskDto.getAssigneeId() != null) {
+            task.setAssigneeId(taskDto.getAssigneeId());
+        }
+        
         // Set default status and priority if not provided
         task.setStatus(taskDto.getStatus() != null ? taskDto.getStatus() : TaskStatus.TODO);
         task.setPriority(taskDto.getPriority() != null ? taskDto.getPriority() : Priority.MEDIUM);
@@ -100,8 +110,7 @@ public class TaskService {
             task.setProject(project);
         }
         
-        Task savedTask = taskRepository.save(task);
-        return taskMapper.toDto(savedTask);
+        return taskMapper.toDto(taskRepository.save(task));
     }
 
     @Transactional

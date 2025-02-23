@@ -29,15 +29,12 @@ public class TaskAttachmentDto extends BaseDto {
     
     @Schema(description = "Task ID", example = "1")
     private Long taskId;
+    
+    @Schema(description = "Owner ID", example = "1")
+    private Long ownerId;
 
     // Custom validation based on type
     public boolean isValid() {
-        if (type == null) return false;
-
-        return switch (type) {
-            case FILE -> extension != null && type.isValidExtension(extension);
-            case CODE_SNIPPET -> content != null && !content.trim().isEmpty();
-            case LINK -> content != null && content.matches("^(http|https)://.*$");
-        };
+        return name != null && !name.trim().isEmpty() && type != null;
     }
 } 

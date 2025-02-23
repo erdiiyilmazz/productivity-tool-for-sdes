@@ -9,12 +9,15 @@ import java.nio.charset.StandardCharsets;
 
 @Mapper(componentModel = "spring")
 public interface TaskAttachmentMapper {
+    @Mapping(target = "content", ignore = true)
     @Mapping(target = "task", ignore = true)
     TaskAttachment toEntity(TaskAttachmentDto dto);
 
     @Mapping(source = "task.id", target = "taskId")
+    @Mapping(target = "content", expression = "java(attachment.getContent() != null ? new String(attachment.getContent(), java.nio.charset.StandardCharsets.UTF_8) : null)")
     TaskAttachmentDto toDto(TaskAttachment attachment);
 
+    @Mapping(target = "content", ignore = true)
     @Mapping(target = "task", ignore = true)
     void updateEntity(TaskAttachmentDto dto, @MappingTarget TaskAttachment attachment);
 

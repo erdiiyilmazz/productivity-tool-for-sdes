@@ -25,4 +25,7 @@ public class TaskAttachment extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;
+    
+    @Column(name = "owner_id", nullable = false)
+    private Long ownerId;
 } 

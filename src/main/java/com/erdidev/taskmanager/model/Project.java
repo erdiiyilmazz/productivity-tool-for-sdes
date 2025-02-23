@@ -17,6 +17,9 @@ public class Project extends BaseEntity {
     
     private String description;
     
+    @Column(name = "owner_id", nullable = false)
+    private Long ownerId;
+    
     @OneToMany(mappedBy = "project")
     private Set<Category> categories = new HashSet<>();
     
