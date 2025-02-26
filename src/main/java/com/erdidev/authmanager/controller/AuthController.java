@@ -13,7 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
@@ -59,7 +59,20 @@ public class AuthController {
         @ApiResponse(responseCode = "200", description = "Current user details retrieved"),
         @ApiResponse(responseCode = "401", description = "Not authenticated")
     })
-    public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(authService.getCurrentUser(userDetails.getUsername()));
+    public ResponseEntity<UserDto> getCurrentUser(Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        // Handle different types of authentication principals
+        String username;
+        if (authentication.getPrincipal() instanceof UserDetails) {
+            username = ((UserDetails) authentication.getPrincipal()).getUsername();
+        } else {
+            // For our development mode where we set a string principal
+            username = authentication.getName();
+        }
+        
+        return ResponseEntity.ok(authService.getCurrentUser(username));
     }
 } 
