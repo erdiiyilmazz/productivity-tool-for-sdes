@@ -1,8 +1,8 @@
 package com.erdidev.scheduler.model;
 
 import com.erdidev.scheduler.enums.ScheduleStatus;
-import com.erdidev.timemanager.model.BaseEntity;
-import com.erdidev.timemanager.model.Task;
+import com.erdidev.taskmanager.model.BaseEntity;
+import com.erdidev.taskmanager.model.Task;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

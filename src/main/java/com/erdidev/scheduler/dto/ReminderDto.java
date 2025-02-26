@@ -2,7 +2,7 @@ package com.erdidev.scheduler.dto;
 
 import com.erdidev.scheduler.enums.NotificationChannel;
 import com.erdidev.scheduler.enums.ReminderStatus;
-import com.erdidev.timemanager.dto.BaseDto;
+import com.erdidev.taskmanager.dto.BaseDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;

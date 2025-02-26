@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
     
-    @Value("${timemanager.openapi.dev-url}")
+    @Value("${taskmanager.openapi.dev-url}")
     private String devUrl;
 
     @Bean
