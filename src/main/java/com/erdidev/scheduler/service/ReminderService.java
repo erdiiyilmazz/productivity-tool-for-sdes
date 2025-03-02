@@ -37,8 +37,7 @@ public class ReminderService {
     private final ScheduleRepository scheduleRepository;
     private final ReminderMapper reminderMapper;
     private final NotificationStrategy notificationStrategy;
-    @Autowired
-    private TaskRepository taskRepository;
+    private final TaskRepository taskRepository;
 
     @Transactional
     public ReminderDto createReminder(ReminderDto reminderDto) {
