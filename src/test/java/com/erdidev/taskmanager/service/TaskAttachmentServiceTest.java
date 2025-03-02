@@ -25,7 +25,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
@@ -61,12 +60,10 @@ class TaskAttachmentServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Set up test task
         task = new Task();
         task.setId(1L);
         task.setTitle("Test Task");
         
-        // Set up test attachment
         attachment = new TaskAttachment();
         attachment.setId(1L);
         attachment.setName("Test Attachment");
@@ -74,7 +71,6 @@ class TaskAttachmentServiceTest {
         attachment.setType(AttachmentType.FILE);
         attachment.setContent("Test content".getBytes(StandardCharsets.UTF_8));
         
-        // Set up attachment DTO
         attachmentDto = new TaskAttachmentDto();
         attachmentDto.setId(1L);
         attachmentDto.setName("Test Attachment");
@@ -95,43 +91,36 @@ class TaskAttachmentServiceTest {
 
     @Test
     void getTaskAttachments_ReturnsAttachmentsForTask() {
-        // Given
         when(taskRepository.existsById(1L)).thenReturn(true);
         when(attachmentRepository.findByTaskId(1L)).thenReturn(List.of(attachment));
         when(attachmentMapper.toDto(attachment)).thenReturn(attachmentDto);
 
-        // When
         List<TaskAttachmentDto> results = attachmentService.getTaskAttachments(1L);
 
-        // Then
         assertNotNull(results);
         assertEquals(1, results.size());
-        assertEquals(attachmentDto.getId(), results.get(0).getId());
-        assertEquals(attachmentDto.getTaskId(), results.get(0).getTaskId());
+        assertEquals(attachmentDto.getId(), results.getFirst().getId());
+        assertEquals(attachmentDto.getTaskId(), results.getFirst().getTaskId());
         verify(attachmentRepository).findByTaskId(1L);
     }
 
     @Test
     void getTaskAttachmentsByType_ReturnsAttachmentsWithRequestedType() {
-        // Given
         when(attachmentRepository.findByTaskIdAndType(1L, AttachmentType.FILE))
             .thenReturn(List.of(attachment));
         when(attachmentMapper.toDto(attachment)).thenReturn(attachmentDto);
 
-        // When
         List<TaskAttachmentDto> results = attachmentService.getTaskAttachmentsByType(1L, AttachmentType.FILE);
 
-        // Then
         assertNotNull(results);
         assertEquals(1, results.size());
-        assertEquals(attachmentDto.getId(), results.get(0).getId());
-        assertEquals(AttachmentType.FILE, results.get(0).getType());
+        assertEquals(attachmentDto.getId(), results.getFirst().getId());
+        assertEquals(AttachmentType.FILE, results.getFirst().getType());
         verify(attachmentRepository).findByTaskIdAndType(1L, AttachmentType.FILE);
     }
 
     @Test
     void addAttachment_ValidData_ReturnsCreatedAttachment() {
-        // Given
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
         when(attachmentMapper.toEntity(attachmentDto)).thenReturn(attachment);
         when(attachmentRepository.save(any(TaskAttachment.class))).thenReturn(attachment);
@@ -140,10 +129,8 @@ class TaskAttachmentServiceTest {
         try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
             securityUtils.when(SecurityUtils::getCurrentUserId).thenReturn(testUserId);
 
-            // When
             TaskAttachmentDto result = attachmentService.addAttachment(1L, attachmentDto);
 
-            // Then
             assertNotNull(result);
             assertEquals(attachmentDto.getId(), result.getId());
             assertEquals(attachmentDto.getName(), result.getName());
@@ -154,11 +141,9 @@ class TaskAttachmentServiceTest {
 
     @Test
     void addAttachment_NonExistingTaskId_ThrowsException() {
-        // Given
         when(taskRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // When & Then
-        assertThrows(TaskNotFoundException.class, 
+        assertThrows(TaskNotFoundException.class,
                 () -> attachmentService.addAttachment(999L, attachmentDto));
         verify(taskRepository).findById(999L);
         verify(attachmentRepository, never()).save(any(TaskAttachment.class));
@@ -166,7 +151,6 @@ class TaskAttachmentServiceTest {
 
     @Test
     void createAttachment_ValidData_ReturnsCreatedAttachment() throws IOException {
-        // Given
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
         when(multipartFile.getBytes()).thenReturn("Test content".getBytes(StandardCharsets.UTF_8));
         when(multipartFile.getOriginalFilename()).thenReturn("test_file.txt");
@@ -179,10 +163,8 @@ class TaskAttachmentServiceTest {
         try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
             securityUtils.when(SecurityUtils::getCurrentUserId).thenReturn(testUserId);
 
-            // When
             TaskAttachmentDto result = attachmentService.createAttachment(attachmentDto, multipartFile);
 
-            // Then
             assertNotNull(result);
             assertEquals(attachmentDto.getId(), result.getId());
             assertEquals(attachmentDto.getName(), result.getName());
@@ -192,24 +174,19 @@ class TaskAttachmentServiceTest {
 
     @Test
     void deleteAttachment_ExistingId_DeletesAttachment() {
-        // Given
         when(attachmentRepository.existsById(1L)).thenReturn(true);
         doNothing().when(attachmentRepository).deleteById(1L);
 
-        // When
         assertDoesNotThrow(() -> attachmentService.deleteAttachment(1L));
 
-        // Then
         verify(attachmentRepository).existsById(1L);
         verify(attachmentRepository).deleteById(1L);
     }
 
     @Test
     void deleteAttachment_NonExistingId_ThrowsException() {
-        // Given
         when(attachmentRepository.existsById(999L)).thenReturn(false);
 
-        // When & Then
         assertThrows(TaskAttachmentNotFoundException.class, () -> attachmentService.deleteAttachment(999L));
         verify(attachmentRepository).existsById(999L);
         verify(attachmentRepository, never()).deleteById(any());
@@ -217,24 +194,19 @@ class TaskAttachmentServiceTest {
 
     @Test
     void deleteAllTaskAttachments_ExistingTaskId_DeletesAllAttachments() {
-        // Given
         when(taskRepository.existsById(1L)).thenReturn(true);
         doNothing().when(attachmentRepository).deleteByTaskId(1L);
 
-        // When
         assertDoesNotThrow(() -> attachmentService.deleteAllTaskAttachments(1L));
 
-        // Then
         verify(taskRepository).existsById(1L);
         verify(attachmentRepository).deleteByTaskId(1L);
     }
 
     @Test
     void deleteAllTaskAttachments_NonExistingTaskId_ThrowsException() {
-        // Given
         when(taskRepository.existsById(999L)).thenReturn(false);
 
-        // When & Then
         assertThrows(TaskNotFoundException.class, () -> attachmentService.deleteAllTaskAttachments(999L));
         verify(taskRepository).existsById(999L);
         verify(attachmentRepository, never()).deleteByTaskId(any());

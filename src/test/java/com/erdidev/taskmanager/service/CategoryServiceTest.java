@@ -52,13 +52,11 @@ class CategoryServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Set up test project
         project = new Project();
         project.setId(1L);
         project.setName("Test Project");
         project.setDescription("Test Description");
         
-        // Set up test category
         category = new Category();
         category.setId(1L);
         category.setName("Test Category");
@@ -66,7 +64,6 @@ class CategoryServiceTest {
         category.setProject(project);
         category.setOwnerId(testUserId);
         
-        // Set up category DTO
         categoryDto = new CategoryDto();
         categoryDto.setId(1L);
         categoryDto.setName("Test Category");
@@ -76,27 +73,23 @@ class CategoryServiceTest {
 
     @Test
     void getCategories_ReturnsPageOfCategories() {
-        // Given
         Pageable pageable = mock(Pageable.class);
         Page<Category> categoryPage = new PageImpl<>(List.of(category));
         
         when(categoryRepository.findAll(pageable)).thenReturn(categoryPage);
         when(categoryMapper.toDto(category)).thenReturn(categoryDto);
 
-        // When
         Page<CategoryDto> result = categoryService.getCategories(pageable);
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(categoryDto.getId(), result.getContent().get(0).getId());
-        assertEquals(categoryDto.getName(), result.getContent().get(0).getName());
+        assertEquals(categoryDto.getId(), result.getContent().getFirst().getId());
+        assertEquals(categoryDto.getName(), result.getContent().getFirst().getName());
         verify(categoryRepository).findAll(pageable);
     }
 
     @Test
     void getCategoriesByProject_ExistingProjectId_ReturnsCategoriesForProject() {
-        // Given
         Pageable pageable = mock(Pageable.class);
         Page<Category> categoryPage = new PageImpl<>(List.of(category));
         
@@ -104,26 +97,22 @@ class CategoryServiceTest {
         when(categoryRepository.findByProjectId(1L, pageable)).thenReturn(categoryPage);
         when(categoryMapper.toDto(category)).thenReturn(categoryDto);
 
-        // When
         Page<CategoryDto> result = categoryService.getCategoriesByProject(1L, pageable);
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(categoryDto.getId(), result.getContent().get(0).getId());
-        assertEquals(categoryDto.getProjectId(), result.getContent().get(0).getProjectId());
+        assertEquals(categoryDto.getId(), result.getContent().getFirst().getId());
+        assertEquals(categoryDto.getProjectId(), result.getContent().getFirst().getProjectId());
         verify(projectRepository).existsById(1L);
         verify(categoryRepository).findByProjectId(1L, pageable);
     }
 
     @Test
     void getCategoriesByProject_NonExistingProjectId_ThrowsException() {
-        // Given
         Pageable pageable = mock(Pageable.class);
         when(projectRepository.existsById(999L)).thenReturn(false);
 
-        // When & Then
-        assertThrows(ProjectNotFoundException.class, 
+        assertThrows(ProjectNotFoundException.class,
                 () -> categoryService.getCategoriesByProject(999L, pageable));
         verify(projectRepository).existsById(999L);
         verify(categoryRepository, never()).findByProjectId(anyLong(), any(Pageable.class));
@@ -131,48 +120,39 @@ class CategoryServiceTest {
 
     @Test
     void searchCategories_ReturnsMatchingCategories() {
-        // Given
         String searchQuery = "test";
         when(categoryRepository.findByNameContainingIgnoreCase(searchQuery)).thenReturn(List.of(category));
         when(categoryMapper.toDto(category)).thenReturn(categoryDto);
 
-        // When
         List<CategoryDto> results = categoryService.searchCategories(searchQuery);
 
-        // Then
         assertNotNull(results);
         assertEquals(1, results.size());
-        assertEquals(categoryDto.getId(), results.get(0).getId());
-        assertEquals(categoryDto.getName(), results.get(0).getName());
+        assertEquals(categoryDto.getId(), results.getFirst().getId());
+        assertEquals(categoryDto.getName(), results.getFirst().getName());
         verify(categoryRepository).findByNameContainingIgnoreCase(searchQuery);
     }
 
     @Test
     void getAllCategories_ReturnsAllCategories() {
-        // Given
         when(categoryRepository.findAll()).thenReturn(List.of(category));
         when(categoryMapper.toDto(category)).thenReturn(categoryDto);
 
-        // When
         List<CategoryDto> results = categoryService.getAllCategories();
 
-        // Then
         assertNotNull(results);
         assertEquals(1, results.size());
-        assertEquals(categoryDto.getId(), results.get(0).getId());
+        assertEquals(categoryDto.getId(), results.getFirst().getId());
         verify(categoryRepository).findAll();
     }
 
     @Test
     void getCategory_ExistingId_ReturnsCategory() {
-        // Given
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
         when(categoryMapper.toDto(category)).thenReturn(categoryDto);
 
-        // When
         CategoryDto result = categoryService.getCategory(1L);
 
-        // Then
         assertNotNull(result);
         assertEquals(categoryDto.getId(), result.getId());
         assertEquals(categoryDto.getName(), result.getName());
@@ -181,17 +161,14 @@ class CategoryServiceTest {
 
     @Test
     void getCategory_NonExistingId_ThrowsException() {
-        // Given
         when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(CategoryNotFoundException.class, () -> categoryService.getCategory(999L));
         verify(categoryRepository).findById(999L);
     }
 
     @Test
     void createCategory_ValidData_ReturnsCreatedCategory() {
-        // Given
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
         when(categoryMapper.toEntity(categoryDto)).thenReturn(category);
         when(categoryRepository.save(any(Category.class))).thenReturn(category);
@@ -200,10 +177,8 @@ class CategoryServiceTest {
         try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
             securityUtils.when(SecurityUtils::getCurrentUserId).thenReturn(testUserId);
 
-            // When
             CategoryDto result = categoryService.createCategory(1L, categoryDto);
 
-            // Then
             assertNotNull(result);
             assertEquals(categoryDto.getId(), result.getId());
             assertEquals(categoryDto.getName(), result.getName());
@@ -215,11 +190,9 @@ class CategoryServiceTest {
 
     @Test
     void createCategory_NonExistingProjectId_ThrowsException() {
-        // Given
         when(projectRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // When & Then
-        assertThrows(ProjectNotFoundException.class, 
+        assertThrows(ProjectNotFoundException.class,
                 () -> categoryService.createCategory(999L, categoryDto));
         verify(projectRepository).findById(999L);
         verify(categoryRepository, never()).save(any(Category.class));
@@ -227,7 +200,6 @@ class CategoryServiceTest {
 
     @Test
     void updateCategory_ExistingId_ReturnsUpdatedCategory() {
-        // Given
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
         when(categoryRepository.save(any(Category.class))).thenReturn(category);
         when(categoryMapper.toDto(category)).thenReturn(categoryDto);
@@ -236,10 +208,8 @@ class CategoryServiceTest {
         updateDto.setName("Updated Category");
         updateDto.setDescription("Updated Description");
 
-        // When
         CategoryDto result = categoryService.updateCategory(1L, updateDto);
 
-        // Then
         assertNotNull(result);
         assertEquals(category.getId(), result.getId());
         verify(categoryRepository).findById(1L);
@@ -248,14 +218,12 @@ class CategoryServiceTest {
 
     @Test
     void updateCategory_NonExistingId_ThrowsException() {
-        // Given
         when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
 
         CategoryDto updateDto = new CategoryDto();
         updateDto.setName("Updated Category");
 
-        // When & Then
-        assertThrows(CategoryNotFoundException.class, 
+        assertThrows(CategoryNotFoundException.class,
                 () -> categoryService.updateCategory(999L, updateDto));
         verify(categoryRepository).findById(999L);
         verify(categoryRepository, never()).save(any(Category.class));
@@ -263,14 +231,11 @@ class CategoryServiceTest {
 
     @Test
     void deleteCategory_ExistingId_DeletesCategory() {
-        // Given
         when(categoryRepository.existsById(1L)).thenReturn(true);
         doNothing().when(categoryRepository).deleteById(1L);
 
-        // When
         assertDoesNotThrow(() -> categoryService.deleteCategory(1L));
 
-        // Then
         verify(categoryRepository).existsById(1L);
         verify(categoryRepository).deleteById(1L);
     }

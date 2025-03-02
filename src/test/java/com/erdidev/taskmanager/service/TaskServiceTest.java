@@ -66,7 +66,6 @@ class TaskServiceTest {
 
     @BeforeAll
     static void setUpAll() {
-        // Set up static mock once for all tests
         securityUtilsMock = mockStatic(SecurityUtils.class);
     }
 
@@ -78,20 +77,17 @@ class TaskServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Set up test project
         project = new Project();
         project.setId(1L);
         project.setName("Test Project");
         project.setDescription("Test Description");
         
-        // Set up test category
         category = new Category();
         category.setId(1L);
         category.setName("Test Category");
         category.setDescription("Test Description");
         category.setProject(project);
         
-        // Set up test task
         task = new Task();
         task.setId(1L);
         task.setTitle("Test Task");
@@ -105,7 +101,6 @@ class TaskServiceTest {
         task.setUpdatedAt(LocalDateTime.now());
         task.setOwnerId(testUserId);
         
-        // Set up task DTO
         taskDto = new TaskDto();
         taskDto.setId(1L);
         taskDto.setTitle("Test Task");
@@ -133,135 +128,115 @@ class TaskServiceTest {
 
     @Test
     void getTasks_ReturnsPageOfTasks() {
-        // Given
         Pageable pageable = mock(Pageable.class);
         Page<Task> taskPage = new PageImpl<>(List.of(task));
         
         when(taskRepository.findAll(pageable)).thenReturn(taskPage);
         when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        // When
         Page<TaskDto> result = taskService.getTasks(pageable);
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(taskDto.getId(), result.getContent().get(0).getId());
-        assertEquals(taskDto.getTitle(), result.getContent().get(0).getTitle());
+        assertEquals(taskDto.getId(), result.getContent().getFirst().getId());
+        assertEquals(taskDto.getTitle(), result.getContent().getFirst().getTitle());
         verify(taskRepository).findAll(pageable);
     }
 
     @Test
     void getTasksByProject_ExistingProjectId_ReturnsTasksForProject() {
-        // Given
         Pageable pageable = mock(Pageable.class);
         Page<Task> taskPage = new PageImpl<>(List.of(task));
         
         when(taskRepository.findByProjectId(1L, pageable)).thenReturn(taskPage);
         when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        // When
         Page<TaskDto> result = taskService.getTasksByProject(1L, pageable);
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(taskDto.getId(), result.getContent().get(0).getId());
-        assertEquals(taskDto.getProjectId(), result.getContent().get(0).getProjectId());
+        assertEquals(taskDto.getId(), result.getContent().getFirst().getId());
+        assertEquals(taskDto.getProjectId(), result.getContent().getFirst().getProjectId());
         verify(taskRepository).findByProjectId(1L, pageable);
     }
 
     @Test
     void getTasksByProject_NonExistingProjectId_ThrowsNotFoundException() {
-        // Given
         Pageable pageable = mock(Pageable.class);
         
         // Mock the implementation to throw the right exception
         when(taskRepository.findByProjectId(eq(999L), any(Pageable.class)))
             .thenThrow(new ProjectNotFoundException(999L));
 
-        // When & Then
-        assertThrows(ProjectNotFoundException.class, 
+        assertThrows(ProjectNotFoundException.class,
                 () -> taskService.getTasksByProject(999L, pageable));
     }
 
     @Test
     void getTasksByCategory_ExistingCategoryId_ReturnsTasksForCategory() {
-        // Given
         Pageable pageable = mock(Pageable.class);
         Page<Task> taskPage = new PageImpl<>(List.of(task));
         
         when(taskRepository.findByCategoryId(1L, pageable)).thenReturn(taskPage);
         when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        // When
         Page<TaskDto> result = taskService.getTasksByCategory(1L, pageable);
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(taskDto.getId(), result.getContent().get(0).getId());
-        assertEquals(taskDto.getCategoryId(), result.getContent().get(0).getCategoryId());
+        assertEquals(taskDto.getId(), result.getContent().getFirst().getId());
+        assertEquals(taskDto.getCategoryId(), result.getContent().getFirst().getCategoryId());
         verify(taskRepository).findByCategoryId(1L, pageable);
     }
 
     @Test
     void getTasksByCategory_NonExistingCategoryId_ThrowsNotFoundException() {
-        // Given
         Pageable pageable = mock(Pageable.class);
         
         // Mock the implementation to throw the right exception
         when(taskRepository.findByCategoryId(eq(999L), any(Pageable.class)))
             .thenThrow(new CategoryNotFoundException(999L));
 
-        // When & Then
-        assertThrows(CategoryNotFoundException.class, 
+        assertThrows(CategoryNotFoundException.class,
                 () -> taskService.getTasksByCategory(999L, pageable));
     }
 
     @Test
     void getTasksByStatus_ReturnsTasksWithRequestedStatus() {
-        // Given
         Pageable pageable = mock(Pageable.class);
         Page<Task> taskPage = new PageImpl<>(List.of(task));
         
         when(taskRepository.findByStatus(TaskStatus.TODO, pageable)).thenReturn(taskPage);
         when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        // When
         Page<TaskDto> result = taskService.getTasksByStatus(TaskStatus.TODO, pageable);
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(taskDto.getId(), result.getContent().get(0).getId());
-        assertEquals(TaskStatus.TODO, result.getContent().get(0).getStatus());
+        assertEquals(taskDto.getId(), result.getContent().getFirst().getId());
+        assertEquals(TaskStatus.TODO, result.getContent().getFirst().getStatus());
         verify(taskRepository).findByStatus(TaskStatus.TODO, pageable);
     }
 
     @Test
     void getTasksByPriority_ReturnsTasksWithRequestedPriority() {
-        // Given
         Pageable pageable = mock(Pageable.class);
         Page<Task> taskPage = new PageImpl<>(List.of(task));
         
         when(taskRepository.findByPriority(Priority.MEDIUM, pageable)).thenReturn(taskPage);
         when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        // When
         Page<TaskDto> result = taskService.getTasksByPriority(Priority.MEDIUM, pageable);
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(taskDto.getId(), result.getContent().get(0).getId());
-        assertEquals(Priority.MEDIUM, result.getContent().get(0).getPriority());
+        assertEquals(taskDto.getId(), result.getContent().getFirst().getId());
+        assertEquals(Priority.MEDIUM, result.getContent().getFirst().getPriority());
         verify(taskRepository).findByPriority(Priority.MEDIUM, pageable);
     }
 
     @Test
     void getOverdueTasks_ReturnsOverdueTasks() {
-        // Given
         Pageable pageable = mock(Pageable.class);
         Page<Task> taskPage = new PageImpl<>(List.of(task));
         
@@ -269,45 +244,37 @@ class TaskServiceTest {
             .thenReturn(taskPage);
         when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        // When
         Page<TaskDto> result = taskService.getOverdueTasks(pageable);
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(taskDto.getId(), result.getContent().get(0).getId());
+        assertEquals(taskDto.getId(), result.getContent().getFirst().getId());
         verify(taskRepository).findOverdueTasks(any(LocalDateTime.class), eq(pageable));
     }
 
     @Test
     void searchTasks_ReturnsMatchingTasks() {
-        // Given
         String searchQuery = "test";
         when(taskRepository.findByTitleContainingIgnoreCase(searchQuery))
             .thenReturn(List.of(task));
         when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        // When
         List<TaskDto> results = taskService.searchTasks(searchQuery);
 
-        // Then
         assertNotNull(results);
         assertEquals(1, results.size());
-        assertEquals(taskDto.getId(), results.get(0).getId());
-        assertEquals(taskDto.getTitle(), results.get(0).getTitle());
+        assertEquals(taskDto.getId(), results.getFirst().getId());
+        assertEquals(taskDto.getTitle(), results.getFirst().getTitle());
         verify(taskRepository).findByTitleContainingIgnoreCase(searchQuery);
     }
 
     @Test
     void getTask_ExistingId_ReturnsTask() {
-        // Given
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
         when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        // When
         TaskDto result = taskService.getTask(1L);
 
-        // Then
         assertNotNull(result);
         assertEquals(taskDto.getId(), result.getId());
         assertEquals(taskDto.getTitle(), result.getTitle());
@@ -316,27 +283,22 @@ class TaskServiceTest {
 
     @Test
     void getTask_NonExistingId_ThrowsException() {
-        // Given
         when(taskRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(TaskNotFoundException.class, () -> taskService.getTask(999L));
         verify(taskRepository).findById(999L);
     }
 
     @Test
     void createTask_ValidData_ReturnsCreatedTask() {
-        // Given
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
         when(taskMapper.toEntity(taskDto)).thenReturn(task);
         when(taskRepository.save(any(Task.class))).thenReturn(task);
         when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        // When
         TaskDto result = taskService.createTask(taskDto);
 
-        // Then
         assertNotNull(result);
         assertEquals(taskDto.getId(), result.getId());
         assertEquals(taskDto.getTitle(), result.getTitle());
@@ -347,7 +309,6 @@ class TaskServiceTest {
 
     @Test
     void createTask_NonExistingProjectId_ThrowsException() {
-        // Given
         TaskDto newTaskDto = new TaskDto();
         newTaskDto.setTitle("Test Task");
         newTaskDto.setProjectId(999L);
@@ -358,7 +319,6 @@ class TaskServiceTest {
         
         when(projectRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(ProjectNotFoundException.class, () -> taskService.createTask(newTaskDto));
         verify(projectRepository).findById(999L);
         verify(taskRepository, never()).save(any(Task.class));
@@ -366,7 +326,6 @@ class TaskServiceTest {
 
     @Test
     void createTask_NonExistingCategoryId_ThrowsException() {
-        // Given
         TaskDto newTaskDto = new TaskDto();
         newTaskDto.setTitle("Test Task");
         newTaskDto.setProjectId(1L);
@@ -379,7 +338,6 @@ class TaskServiceTest {
         // The service method checks category first, so project is never checked
         when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(CategoryNotFoundException.class, () -> taskService.createTask(newTaskDto));
         verify(categoryRepository).findById(999L);
         // Project repository is never called because exception is thrown earlier
@@ -389,7 +347,6 @@ class TaskServiceTest {
 
     @Test
     void updateTask_ExistingId_ReturnsUpdatedTask() {
-        // Given
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
@@ -404,10 +361,8 @@ class TaskServiceTest {
         updateDto.setStatus(TaskStatus.IN_PROGRESS);
         updateDto.setPriority(Priority.HIGH);
 
-        // When
         TaskDto result = taskService.updateTask(1L, updateDto);
 
-        // Then
         assertNotNull(result);
         assertEquals(task.getId(), result.getId());
         verify(taskRepository).findById(1L);
@@ -418,13 +373,11 @@ class TaskServiceTest {
 
     @Test
     void updateTask_NonExistingId_ThrowsException() {
-        // Given
         when(taskRepository.findById(999L)).thenReturn(Optional.empty());
 
         TaskDto updateDto = new TaskDto();
         updateDto.setTitle("Updated Task");
 
-        // When & Then
         assertThrows(TaskNotFoundException.class, () -> taskService.updateTask(999L, updateDto));
         verify(taskRepository).findById(999L);
         verify(taskRepository, never()).save(any(Task.class));
@@ -432,7 +385,6 @@ class TaskServiceTest {
 
     @Test
     void updateTask_StatusChange_ReturnsUpdatedTask() {
-        // Given
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
         when(taskRepository.save(any(Task.class))).thenReturn(task);
         when(taskMapper.toDto(task)).thenReturn(taskDto);
@@ -440,10 +392,8 @@ class TaskServiceTest {
         TaskDto updateDto = new TaskDto();
         updateDto.setStatus(TaskStatus.DONE);
 
-        // When
         TaskDto result = taskService.updateTask(1L, updateDto);
 
-        // Then
         assertNotNull(result);
         assertEquals(task.getId(), result.getId());
         verify(taskRepository).findById(1L);
@@ -452,14 +402,12 @@ class TaskServiceTest {
 
     @Test
     void updateTask_StatusChange_NonExistingId_ThrowsException() {
-        // Given
         when(taskRepository.findById(999L)).thenReturn(Optional.empty());
 
         TaskDto updateDto = new TaskDto();
         updateDto.setStatus(TaskStatus.DONE);
 
-        // When & Then
-        assertThrows(TaskNotFoundException.class, 
+        assertThrows(TaskNotFoundException.class,
                 () -> taskService.updateTask(999L, updateDto));
         verify(taskRepository).findById(999L);
         verify(taskRepository, never()).save(any(Task.class));
@@ -467,14 +415,11 @@ class TaskServiceTest {
 
     @Test
     void deleteTask_ExistingId_DeletesTask() {
-        // Given
         when(taskRepository.existsById(1L)).thenReturn(true);
         doNothing().when(taskRepository).deleteById(1L);
 
-        // When
         assertDoesNotThrow(() -> taskService.deleteTask(1L));
 
-        // Then
         verify(taskRepository).existsById(1L);
         verify(attachmentRepository).deleteByTaskId(1L);
         verify(taskRepository).deleteById(1L);
@@ -482,10 +427,8 @@ class TaskServiceTest {
 
     @Test
     void deleteTask_NonExistingId_ThrowsException() {
-        // Given
         when(taskRepository.existsById(999L)).thenReturn(false);
 
-        // When & Then
         assertThrows(TaskNotFoundException.class, () -> taskService.deleteTask(999L));
         verify(taskRepository).existsById(999L);
         verify(taskRepository, never()).deleteById(any());

@@ -45,14 +45,12 @@ class ProjectServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Set up test project
         project = new Project();
         project.setId(1L);
         project.setName("Test Project");
         project.setDescription("Test Description");
         project.setOwnerId(testUserId);
 
-        // Set up project DTO
         projectDto = new ProjectDto();
         projectDto.setId(1L);
         projectDto.setName("Test Project");
@@ -62,34 +60,28 @@ class ProjectServiceTest {
 
     @Test
     void getProjects_ReturnsPageOfProjects() {
-        // Given
         Pageable pageable = mock(Pageable.class);
         Page<Project> projectPage = new PageImpl<>(List.of(project));
         
         when(projectRepository.findAll(pageable)).thenReturn(projectPage);
         when(projectMapper.toDto(project)).thenReturn(projectDto);
 
-        // When
         Page<ProjectDto> result = projectService.getProjects(pageable);
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(projectDto.getId(), result.getContent().get(0).getId());
-        assertEquals(projectDto.getName(), result.getContent().get(0).getName());
+        assertEquals(projectDto.getId(), result.getContent().getFirst().getId());
+        assertEquals(projectDto.getName(), result.getContent().getFirst().getName());
         verify(projectRepository).findAll(pageable);
     }
 
     @Test
     void getProject_ExistingId_ReturnsProject() {
-        // Given
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
         when(projectMapper.toDto(project)).thenReturn(projectDto);
 
-        // When
         ProjectDto result = projectService.getProject(1L);
 
-        // Then
         assertNotNull(result);
         assertEquals(projectDto.getId(), result.getId());
         assertEquals(projectDto.getName(), result.getName());
@@ -98,17 +90,14 @@ class ProjectServiceTest {
 
     @Test
     void getProject_NonExistingId_ThrowsException() {
-        // Given
         when(projectRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(ProjectNotFoundException.class, () -> projectService.getProject(999L));
         verify(projectRepository).findById(999L);
     }
 
     @Test
     void createProject_ValidData_ReturnsCreatedProject() {
-        // Given
         when(projectMapper.toEntity(projectDto)).thenReturn(project);
         when(projectRepository.save(any(Project.class))).thenReturn(project);
         when(projectMapper.toDto(project)).thenReturn(projectDto);
@@ -116,10 +105,8 @@ class ProjectServiceTest {
         try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
             securityUtils.when(SecurityUtils::getCurrentUserId).thenReturn(testUserId);
 
-            // When
             ProjectDto result = projectService.createProject(projectDto);
 
-            // Then
             assertNotNull(result);
             assertEquals(projectDto.getId(), result.getId());
             assertEquals(projectDto.getName(), result.getName());
@@ -130,7 +117,6 @@ class ProjectServiceTest {
 
     @Test
     void updateProject_ExistingId_ReturnsUpdatedProject() {
-        // Given
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
         when(projectRepository.save(any(Project.class))).thenReturn(project);
         when(projectMapper.toDto(project)).thenReturn(projectDto);
@@ -139,10 +125,8 @@ class ProjectServiceTest {
         updateDto.setName("Updated Project");
         updateDto.setDescription("Updated Description");
 
-        // When
         ProjectDto result = projectService.updateProject(1L, updateDto);
 
-        // Then
         assertNotNull(result);
         assertEquals(project.getId(), result.getId());
         assertEquals(projectDto.getName(), result.getName());
@@ -152,13 +136,11 @@ class ProjectServiceTest {
 
     @Test
     void updateProject_NonExistingId_ThrowsException() {
-        // Given
         when(projectRepository.findById(999L)).thenReturn(Optional.empty());
 
         ProjectDto updateDto = new ProjectDto();
         updateDto.setName("Updated Project");
 
-        // When & Then
         assertThrows(ProjectNotFoundException.class, () -> projectService.updateProject(999L, updateDto));
         verify(projectRepository).findById(999L);
         verify(projectRepository, never()).save(any(Project.class));
@@ -166,24 +148,19 @@ class ProjectServiceTest {
 
     @Test
     void deleteProject_ExistingId_DeletesProject() {
-        // Given
         when(projectRepository.existsById(1L)).thenReturn(true);
         doNothing().when(projectRepository).deleteById(1L);
 
-        // When
         assertDoesNotThrow(() -> projectService.deleteProject(1L));
 
-        // Then
         verify(projectRepository).existsById(1L);
         verify(projectRepository).deleteById(1L);
     }
 
     @Test
     void deleteProject_NonExistingId_ThrowsException() {
-        // Given
         when(projectRepository.existsById(999L)).thenReturn(false);
 
-        // When & Then
         assertThrows(ProjectNotFoundException.class, () -> projectService.deleteProject(999L));
         verify(projectRepository).existsById(999L);
         verify(projectRepository, never()).deleteById(any());
@@ -191,19 +168,16 @@ class ProjectServiceTest {
 
     @Test
     void searchProjects_ReturnsMatchingProjects() {
-        // Given
         String searchQuery = "test";
         when(projectRepository.findByNameContainingIgnoreCase(searchQuery)).thenReturn(List.of(project));
         when(projectMapper.toDto(project)).thenReturn(projectDto);
 
-        // When
         List<ProjectDto> results = projectService.searchProjects(searchQuery);
 
-        // Then
         assertNotNull(results);
         assertEquals(1, results.size());
-        assertEquals(projectDto.getId(), results.get(0).getId());
-        assertEquals(projectDto.getName(), results.get(0).getName());
+        assertEquals(projectDto.getId(), results.getFirst().getId());
+        assertEquals(projectDto.getName(), results.getFirst().getName());
         verify(projectRepository).findByNameContainingIgnoreCase(searchQuery);
     }
 } 
