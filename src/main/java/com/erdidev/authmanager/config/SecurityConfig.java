@@ -18,10 +18,6 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.authentication.AuthenticationManager;
 import com.erdidev.authmanager.service.CustomUserDetailsService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import java.util.Collections;
 
 @Slf4j
 @Configuration
@@ -41,18 +37,11 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll())
+                .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                .anyRequest().authenticated())
             .formLogin(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
-            .addFilterBefore((request, response, chain) -> {
-                // Set default user for development
-                SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(
-                        "admin", null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))
-                    )
-                );
-                chain.doFilter(request, response);
-            }, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(sessionAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         
         log.debug("Security configuration completed");
         return http.build();

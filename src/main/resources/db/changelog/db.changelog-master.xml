@@ -12,4 +12,5 @@
     <include file="classpath:/db/changelog/changes/v1.4-add-user-failed-attempts.xml"/>
     <include file="classpath:/db/changelog/changes/v1.5-insert-default-admin.xml"/>
     <include file="classpath:/db/changelog/changes/v1.6-add-owner-ids.xml"/>
+    <include file="changes/v1.7-add-time-tracking.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog> 

@@ -3,7 +3,9 @@ package com.erdidev.scheduler.service;
 import com.erdidev.scheduler.dto.RecurrencePatternDto;
 import com.erdidev.scheduler.dto.ReminderDto;
 import com.erdidev.scheduler.dto.ScheduleDto;
+import com.erdidev.scheduler.enums.NotificationChannel;
 import com.erdidev.scheduler.enums.RecurrenceType;
+import com.erdidev.scheduler.enums.ReminderStatus;
 import com.erdidev.scheduler.enums.ScheduleStatus;
 import com.erdidev.scheduler.model.Schedule;
 import com.erdidev.scheduler.repository.ScheduleRepository;
@@ -26,6 +28,7 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Set;
@@ -46,79 +49,57 @@ public class ScheduleService {
         
         // Get the task
         Task task = taskRepository.findById(scheduleDto.getTaskId())
-            .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + scheduleDto.getTaskId()));
         
-        LocalDateTime now = LocalDateTime.now();
-        
-        // Time validations
-        // 1. Schedule time should be in the future
-        if (scheduleDto.getScheduledTime().isBefore(now)) {
-            throw new IllegalArgumentException("Schedule time must be in the future");
-        }
-        
-        // 2. Validate against task due date
-        if (task.getDueDate() != null && 
-            scheduleDto.getScheduledTime().isAfter(task.getDueDate())) {
-            throw new IllegalArgumentException(
-                "Schedule time cannot be after task due date: " + task.getDueDate());
-        }
-        
-        // 3. Validate start and end times
-        if (scheduleDto.getStartTime() != null && 
-            scheduleDto.getStartTime().isAfter(scheduleDto.getScheduledTime())) {
-            throw new IllegalArgumentException("Start time cannot be after scheduled time");
-        }
-        
-        // Set default times
-        if (scheduleDto.getStartTime() == null) {
-            scheduleDto.setStartTime(scheduleDto.getScheduledTime());
-        }
-        
-        if (scheduleDto.getEndTime() == null) {
-            scheduleDto.setEndTime(scheduleDto.getScheduledTime().plusHours(1));
-        }
-        
-        // 4. Validate end time
-        if (scheduleDto.getEndTime().isBefore(scheduleDto.getStartTime())) {
-            throw new IllegalArgumentException("End time cannot be before start time");
-        }
-        
+        // Convert DTO to entity
         Schedule schedule = scheduleMapper.toEntity(scheduleDto);
         schedule.setTask(task);
         
-        // Set defaults
+        // Set default status if not provided
         if (schedule.getStatus() == null) {
             schedule.setStatus(ScheduleStatus.PENDING);
         }
         
-        if (schedule.getTimeZone() == null) {
-            schedule.setTimeZone(ZoneId.systemDefault().getId());
+        // Ensure end time is set if not provided
+        if (schedule.getEndTime() == null && schedule.getScheduledTime() != null) {
+            schedule.setEndTime(schedule.getScheduledTime().plusHours(1));
         }
         
+        // Ensure start time is set if not provided
+        if (schedule.getStartTime() == null && schedule.getScheduledTime() != null) {
+            schedule.setStartTime(schedule.getScheduledTime());
+        }
+        
+        // Save schedule first to get an ID
         Schedule savedSchedule = scheduleRepository.save(schedule);
-        log.info("Created schedule {} for task {} at time {}", 
-            savedSchedule.getId(), 
-            task.getId(), 
-            scheduleDto.getScheduledTime());
         
-        // Update task status when schedule is created
-        if (task.getStatus() == TaskStatus.TODO) {
-            task.setStatus(TaskStatus.SCHEDULED);
-            taskRepository.save(task);
-        }
-
-        // Create default reminder if not specified
-        if (scheduleDto.getCreateDefaultReminder()) {
+        // Create default reminder if requested
+        if (Boolean.TRUE.equals(scheduleDto.getCreateDefaultReminder())) {
+            // Create reminder AFTER the schedule has an ID
             ReminderDto reminderDto = new ReminderDto();
-            reminderDto.setReminderTime(
-                scheduleDto.getScheduledTime()
-                    .minusMinutes(15)
-                    .atZone(ZoneId.systemDefault())  // Convert to ZonedDateTime
-            );
-            reminderDto.setMessage("Task scheduled to start in 15 minutes: " + task.getTitle());
+            reminderDto.setScheduleId(savedSchedule.getId()); // Now we have an ID
+            reminderDto.setTaskId(task.getId());
+            
+            // Fix: Convert LocalDateTime to ZonedDateTime by explicitly specifying a timezone
+            LocalDateTime reminderTime = schedule.getScheduledTime().minusMinutes(30);
+            ZoneId zoneId = schedule.getTimeZone() != null 
+                ? ZoneId.of(schedule.getTimeZone()) 
+                : ZoneId.systemDefault();
+            ZonedDateTime zonedReminderTime = reminderTime.atZone(zoneId);
+            
+            reminderDto.setReminderTime(zonedReminderTime);
+            reminderDto.setMessage("Reminder for: " + 
+                (schedule.getTitle() != null ? schedule.getTitle() : "Scheduled task"));
+            reminderDto.setStatus(ReminderStatus.PENDING);
+            reminderDto.setType(NotificationChannel.WEBSOCKET);
+            
+            // Initialize notification channels - required by ReminderService
+            reminderDto.setNotificationChannels(Set.of(NotificationChannel.WEBSOCKET));
+            
             reminderService.createReminder(reminderDto);
         }
-
+        
+        log.info("Schedule created with ID: {}", savedSchedule.getId());
         return scheduleMapper.toDto(savedSchedule);
     }
 
