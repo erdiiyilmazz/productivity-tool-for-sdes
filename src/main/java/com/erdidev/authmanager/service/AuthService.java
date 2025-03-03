@@ -37,33 +37,60 @@ public class AuthService {
 
     @Transactional
     public UserDto register(RegisterRequest request) {
+        log.debug("Attempting to register user with username: {}", request.getUsername());
+        
         if (userRepository.existsByUsername(request.getUsername())) {
+            log.debug("Username already exists: {}", request.getUsername());
             throw new AuthenticationException("Username already exists");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
+            log.debug("Email already exists: {}", request.getEmail());
             throw new AuthenticationException("Email already exists");
         }
 
+        // Create default role if it doesn't exist
+        Role userRole = roleRepository.findByName(RoleType.ROLE_USER)
+            .orElseGet(() -> {
+                log.debug("Creating default USER role as it doesn't exist");
+                Role newRole = new Role();
+                newRole.setName(RoleType.ROLE_USER);
+                newRole.setDescription("Default user role");
+                return roleRepository.save(newRole);
+            });
+
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        log.debug("Password encoded successfully: {}", encodedPassword);
+        user.setPassword(encodedPassword);
         user.setEmail(request.getEmail());
         user.setFullName(request.getFullName());
         user.setEnabled(true);
         user.setAccountNonLocked(true);
         
-        // Assign default USER role
-        Role userRole = roleRepository.findByName(RoleType.ROLE_USER)
-            .orElseThrow(() -> new RuntimeException("Default role not found"));
         user.setRoles(Collections.singleton(userRole));
         
+        log.debug("Saving user to database");
         User savedUser = userRepository.save(user);
+        log.debug("User saved successfully with ID: {}", savedUser.getId());
+        
         return userMapper.toDto(savedUser);
     }
 
     @Transactional
     public UserDto authenticate(AuthRequest request, HttpSession session) {
         try {
+            log.debug("Attempting authentication for username: {}", request.getUsername());
+            
+            // First check if user exists
+            User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> {
+                    log.debug("User not found: {}", request.getUsername());
+                    return new AuthenticationException("Invalid username or password");
+                });
+            
+            log.debug("User found, stored password hash: {}", user.getPassword());
+            
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                     request.getUsername(),
@@ -72,22 +99,30 @@ public class AuthService {
             );
 
             UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
-            User user = principal.getUser();
+            user = principal.getUser();
 
             if (!user.isEnabled()) {
+                log.debug("Account is disabled for user: {}", user.getUsername());
                 throw new AuthenticationException("Account is disabled");
             }
             if (!user.isAccountNonLocked()) {
+                log.debug("Account is locked for user: {}", user.getUsername());
                 throw new AuthenticationException("Account is locked");
             }
 
             sessionService.createSession(session.getId(), user);
-            log.debug("User {} successfully authenticated", user.getUsername());
+            log.debug("User {} successfully authenticated and session created", user.getUsername());
             return userMapper.toDto(user);
             
         } catch (BadCredentialsException e) {
-            log.warn("Authentication failed for username: {}", request.getUsername());
+            log.warn("Authentication failed for username: {} - Bad credentials", request.getUsername());
             throw new AuthenticationException("Invalid username or password");
+        } catch (AuthenticationException e) {
+            log.warn("Authentication failed for username: {} - {}", request.getUsername(), e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error during authentication for username: {}", request.getUsername(), e);
+            throw new AuthenticationException("Authentication failed");
         }
     }
 

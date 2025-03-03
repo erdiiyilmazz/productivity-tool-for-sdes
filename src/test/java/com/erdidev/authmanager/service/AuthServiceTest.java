@@ -135,20 +135,40 @@ public class AuthServiceTest {
 
     @Test
     void testAuthenticateUser() {
-        when(userRepository.findByUsername(authRequest.getUsername())).thenReturn(Optional.of(testUser));
-        when(passwordEncoder.matches(authRequest.getPassword(), testUser.getPassword())).thenReturn(true);
+        String username = "testuser";
+        String password = "password";
+        User user = new User();
+        user.setId(1L);
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setEnabled(true);
         
-        UserDto expectedUserDto = new UserDto();
-        expectedUserDto.setId(1L);
-        expectedUserDto.setUsername("testuser");
-        when(userMapper.toDto(testUser)).thenReturn(expectedUserDto);
+        AuthRequest authRequest = new AuthRequest();
+        authRequest.setUsername(username);
+        authRequest.setPassword(password);
         
-        UserDto result = authService.authenticate(authRequest, httpSession);
+        HttpSession session = mock(HttpSession.class);
+        when(session.getId()).thenReturn("test-session-id");
+        
+        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+        
+        // Mock authentication
+        Authentication authentication = mock(Authentication.class);
+        UserPrincipal userPrincipal = new UserPrincipal(user);
+        when(authentication.getPrincipal()).thenReturn(userPrincipal);
+        when(authenticationManager.authenticate(any())).thenReturn(authentication);
+        
+        UserDto expectedDto = new UserDto();
+        expectedDto.setId(1L);
+        expectedDto.setUsername(username);
+        when(userMapper.toDto(any(User.class))).thenReturn(expectedDto);
+        
+        UserDto result = authService.authenticate(authRequest, session);
         
         assertNotNull(result);
-        assertEquals(expectedUserDto.getId(), result.getId());
-        assertEquals(expectedUserDto.getUsername(), result.getUsername());
-        verify(sessionService).createSession(any(), eq(testUser));
+        assertEquals(username, result.getUsername());
+        assertEquals(1L, result.getId());
+        verify(sessionService).createSession(eq("test-session-id"), any(User.class));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.erdidev.authmanager.service;
 
 import com.erdidev.authmanager.model.User;
+import com.erdidev.authmanager.security.SessionUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -16,16 +17,25 @@ public class SessionService {
 
     public void createSession(String sessionId, User user) {
         String key = SESSION_PREFIX + sessionId;
-        redisTemplate.opsForValue().set(key, user, SESSION_DURATION, TimeUnit.HOURS);
+        SessionUser sessionUser = SessionUser.fromUser(user);
+        redisTemplate.opsForValue().set(key, sessionUser, SESSION_DURATION, TimeUnit.HOURS);
     }
 
     public User getSession(String sessionId) {
         String key = SESSION_PREFIX + sessionId;
-        return (User) redisTemplate.opsForValue().get(key);
+        SessionUser sessionUser = (SessionUser) redisTemplate.opsForValue().get(key);
+        return sessionUser != null ? sessionUser.toUser() : null;
     }
 
     public void invalidateSession(String sessionId) {
         String key = SESSION_PREFIX + sessionId;
         redisTemplate.delete(key);
+    }
+
+    public void refreshSession(String sessionId) {
+        String key = SESSION_PREFIX + sessionId;
+        if (redisTemplate.hasKey(key)) {
+            redisTemplate.expire(key, SESSION_DURATION, TimeUnit.HOURS);
+        }
     }
 } 

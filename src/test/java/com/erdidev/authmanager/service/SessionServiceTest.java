@@ -1,6 +1,7 @@
 package com.erdidev.authmanager.service;
 
 import com.erdidev.authmanager.model.User;
+import com.erdidev.authmanager.security.SessionUser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -10,6 +11,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentMatcher;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +34,7 @@ class SessionServiceTest {
     private SessionService sessionService;
 
     private User testUser;
+    private SessionUser sessionUser;
     private String sessionId;
 
     @BeforeEach
@@ -40,9 +43,16 @@ class SessionServiceTest {
         testUser.setId(1L);
         testUser.setUsername("testuser");
         
+        sessionUser = SessionUser.fromUser(testUser);
         sessionId = UUID.randomUUID().toString();
         
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    }
+
+    private static ArgumentMatcher<SessionUser> sessionUserMatcher(SessionUser expected) {
+        return actual -> actual != null && 
+                        actual.getUsername().equals(expected.getUsername()) &&
+                        actual.getId().equals(expected.getId());
     }
 
     @Test
@@ -54,7 +64,7 @@ class SessionServiceTest {
         verify(redisTemplate).opsForValue();
         verify(valueOperations).set(
             eq("session:" + sessionKey),
-            eq(testUser),
+            argThat(sessionUserMatcher(sessionUser)),
             eq(24L),
             eq(TimeUnit.HOURS)
         );
@@ -62,13 +72,15 @@ class SessionServiceTest {
 
     @Test
     void testGetSession() {
-        when(valueOperations.get("session:" + sessionId)).thenReturn(testUser);
+        when(valueOperations.get("session:" + sessionId)).thenReturn(sessionUser);
         
         User result = sessionService.getSession(sessionId);
         
         verify(redisTemplate).opsForValue();
         verify(valueOperations).get("session:" + sessionId);
-        assertEquals(testUser, result);
+        assertNotNull(result);
+        assertEquals(testUser.getId(), result.getId());
+        assertEquals(testUser.getUsername(), result.getUsername());
     }
 
     @Test

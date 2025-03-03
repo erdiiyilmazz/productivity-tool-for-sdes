@@ -1,6 +1,9 @@
 package com.erdidev.authmanager.model;
 
 import com.erdidev.taskmanager.model.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,6 +15,8 @@ import java.util.Set;
 @Table(name = "users")
 @Getter
 @Setter
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class User extends BaseEntity {
     
     @Column(nullable = false, unique = true)
