@@ -111,22 +111,42 @@ public class TaskAttachmentService {
         Task task = taskRepository.findById(attachmentDto.getTaskId())
                 .orElseThrow(() -> new TaskNotFoundException(attachmentDto.getTaskId()));
         
-        TaskAttachment attachment = attachmentMapper.toEntity(attachmentDto);
+        // Create attachment manually instead of using mapper
+        TaskAttachment attachment = new TaskAttachment();
+        attachment.setName(attachmentDto.getName());
+        attachment.setType(attachmentDto.getType());
         attachment.setTask(task);
         attachment.setOwnerId(SecurityUtils.getCurrentUserId());
         
-        // Convert content to bytes based on type
-        switch (attachmentDto.getType()) {
-            case FILE -> handleFileUpload(attachment, file);
-            case CODE_SNIPPET, LINK -> {
-                String content = attachmentDto.getContent();
-                if (content != null) {
-                    attachment.setContent(content.getBytes(StandardCharsets.UTF_8));
-                }
+        if (attachmentDto.getExtension() != null) {
+            attachment.setExtension(attachmentDto.getExtension());
+        }
+        
+        // Handle content based on type
+        if (attachmentDto.getType() == AttachmentType.FILE) {
+            if (file != null) {
+                handleFileUpload(attachment, file);
+            }
+        } else if (attachmentDto.getType() == AttachmentType.CODE_SNIPPET || 
+                  attachmentDto.getType() == AttachmentType.LINK) {
+            if (attachmentDto.getContent() != null) {
+                // Explicitly convert string content to byte array
+                attachment.setContent(attachmentDto.getContent().getBytes(StandardCharsets.UTF_8));
             }
         }
         
-        return attachmentMapper.toDto(attachmentRepository.save(attachment));
+        // Save the attachment
+        TaskAttachment savedAttachment = attachmentRepository.save(attachment);
+        
+        // Use mapper to convert to DTO
+        TaskAttachmentDto dto = attachmentMapper.toDto(savedAttachment);
+        
+        // Ensure content is preserved
+        if (attachmentDto.getContent() != null) {
+            dto.setContent(attachmentDto.getContent());
+        }
+        
+        return dto;
     }
 
     private void validateAttachment(TaskAttachmentDto dto, MultipartFile file) {
@@ -194,5 +214,36 @@ public class TaskAttachmentService {
         }
         
         attachmentRepository.save(attachment);
+    }
+
+    @Transactional
+    public TaskAttachmentDto createLinkAttachment(Long taskId, String name, String url) {
+        log.debug("Creating link attachment for task: {}", taskId);
+        
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new TaskNotFoundException(taskId));
+        
+        // Create attachment manually
+        TaskAttachment attachment = new TaskAttachment();
+        attachment.setName(name);
+        attachment.setType(AttachmentType.LINK);
+        attachment.setTask(task);
+        attachment.setOwnerId(SecurityUtils.getCurrentUserId());
+        
+        // Explicitly convert URL to bytes
+        if (url != null) {
+            attachment.setContent(url.getBytes(StandardCharsets.UTF_8));
+        }
+        
+        // Save the attachment
+        TaskAttachment savedAttachment = attachmentRepository.save(attachment);
+        
+        // Use mapper to convert to DTO
+        TaskAttachmentDto dto = attachmentMapper.toDto(savedAttachment);
+        
+        // Ensure content is set in the DTO
+        dto.setContent(url);
+        
+        return dto;
     }
 } 

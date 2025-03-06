@@ -111,14 +111,10 @@ public class TaskAttachmentController {
     )
     public ResponseEntity<TaskAttachmentDto> uploadLink(
             @PathVariable Long taskId,
-            @RequestBody LinkRequestDto request) {
+            @Valid @RequestBody LinkRequestDto request) {
         
-        TaskAttachmentDto attachmentDto = new TaskAttachmentDto();
-        attachmentDto.setType(AttachmentType.LINK);
-        attachmentDto.setName(request.getName());
-        attachmentDto.setContent(request.getUrl());
-        attachmentDto.setTaskId(taskId);
-        
-        return ResponseEntity.ok(attachmentService.createAttachment(attachmentDto, null));
+        return ResponseEntity.ok(
+            attachmentService.createLinkAttachment(taskId, request.getName(), request.getUrl())
+        );
     }
 } 
