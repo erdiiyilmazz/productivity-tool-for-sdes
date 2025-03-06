@@ -12,9 +12,9 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -31,7 +31,10 @@ public class AuthController {
         @ApiResponse(responseCode = "400", description = "Invalid input or username/email already exists")
     })
     public ResponseEntity<UserDto> register(@Valid @RequestBody RegisterRequest request) {
-        return new ResponseEntity<>(authService.register(request), HttpStatus.CREATED);
+        UserDto userDto = authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(userDto);
     }
 
     @PostMapping("/login")
@@ -43,14 +46,18 @@ public class AuthController {
     public ResponseEntity<UserDto> login(
             @Valid @RequestBody AuthRequest request,
             HttpSession session) {
-        return ResponseEntity.ok(authService.authenticate(request, session));
+        UserDto userDto = authService.authenticate(request, session);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(userDto);
     }
 
     @PostMapping("/logout")
     @Operation(summary = "Logout user")
     public ResponseEntity<Void> logout(HttpSession session) {
         authService.logout(session);
-        return ResponseEntity.noContent().build();
+        session.invalidate();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/me")
@@ -64,15 +71,22 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         
-        // Handle different types of authentication principals
-        String username;
-        if (authentication.getPrincipal() instanceof UserDetails) {
-            username = ((UserDetails) authentication.getPrincipal()).getUsername();
-        } else {
-            // For our development mode where we set a string principal
-            username = authentication.getName();
+        try {
+            String username = authentication.getName();
+            if (username == null || username.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            UserDto userDto = authService.getCurrentUser(username);
+            if (userDto == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(userDto);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
-        return ResponseEntity.ok(authService.getCurrentUser(username));
     }
 } 

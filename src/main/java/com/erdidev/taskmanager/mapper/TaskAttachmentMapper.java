@@ -9,24 +9,24 @@ import java.nio.charset.StandardCharsets;
 
 @Mapper(componentModel = "spring")
 public interface TaskAttachmentMapper {
-    @Mapping(target = "content", ignore = true)
     @Mapping(target = "task", ignore = true)
+    @Mapping(target = "content", ignore = true)
     TaskAttachment toEntity(TaskAttachmentDto dto);
 
     @Mapping(source = "task.id", target = "taskId")
-    @Mapping(target = "content", expression = "java(attachment.getContent() != null ? new String(attachment.getContent(), java.nio.charset.StandardCharsets.UTF_8) : null)")
+    @Mapping(target = "content", expression = "java(mapToString(attachment.getContent()))")
     TaskAttachmentDto toDto(TaskAttachment attachment);
 
-    @Mapping(target = "content", ignore = true)
     @Mapping(target = "task", ignore = true)
+    @Mapping(target = "content", ignore = true)
     void updateEntity(TaskAttachmentDto dto, @MappingTarget TaskAttachment attachment);
 
-    default byte[] map(String value) {
+    default byte[] mapToBytes(String value) {
         if (value == null) return null;
         return value.getBytes(StandardCharsets.UTF_8);
     }
 
-    default String map(byte[] value) {
+    default String mapToString(byte[] value) {
         if (value == null) return null;
         return new String(value, StandardCharsets.UTF_8);
     }

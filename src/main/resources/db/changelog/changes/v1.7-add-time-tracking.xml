@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+
+    <changeSet id="1.7" author="erdidev">
+        <!-- Create time entries table -->
+        <createTable tableName="time_entries">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="task_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="start_time" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="end_time" type="timestamp"/>
+            <column name="duration_seconds" type="bigint"/>
+            <column name="description" type="varchar(500)"/>
+            <column name="is_billable" type="boolean" defaultValueBoolean="false"/>
+            <column name="status" type="varchar(20)" defaultValue="RUNNING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp"/>
+            <column name="updated_at" type="timestamp"/>
+        </createTable>
+
+        <!-- Add foreign key constraints -->
+        <addForeignKeyConstraint baseTableName="time_entries" 
+                                baseColumnNames="task_id" 
+                                constraintName="fk_time_entry_task" 
+                                referencedTableName="tasks"
+                                referencedColumnNames="id"/>
+                                
+        <addForeignKeyConstraint baseTableName="time_entries" 
+                                baseColumnNames="user_id" 
+                                constraintName="fk_time_entry_user" 
+                                referencedTableName="users"
+                                referencedColumnNames="id"/>
+
+        <!-- Add index for faster queries -->
+        <createIndex tableName="time_entries" indexName="idx_time_entries_user_id">
+            <column name="user_id"/>
+        </createIndex>
+        
+        <createIndex tableName="time_entries" indexName="idx_time_entries_task_id">
+            <column name="task_id"/>
+        </createIndex>
+        
+        <createIndex tableName="time_entries" indexName="idx_time_entries_start_time">
+            <column name="start_time"/>
+        </createIndex>
+        
+        <createIndex tableName="time_entries" indexName="idx_time_entries_status">
+            <column name="status"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog> 
