@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Manager API - Dark Mode</title>
+  <link rel="stylesheet" type="text/css" href="/webjars/swagger-ui/swagger-ui.css" />
+  <link rel="icon" type="image/png" href="/webjars/swagger-ui/favicon-32x32.png" sizes="32x32" />
+  <link rel="icon" type="image/png" href="/webjars/swagger-ui/favicon-16x16.png" sizes="16x16" />
+  <style>
+    body {
+      background-color: #1a1a1a;
+      color: #f0f0f0;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="swagger-ui"></div>
+
+  <script src="/webjars/swagger-ui/swagger-ui-bundle.js"></script>
+  <script src="/webjars/swagger-ui/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = function() {
+      SwaggerUIBundle({
+        url: "/v3/api-docs",
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        defaultModelsExpandDepth: -1,
+        displayRequestDuration: true,
+        filter: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "StandaloneLayout",
+        syntaxHighlight: {
+          activate: true,
+          theme: "obsidian"
+        },
+        docExpansion: "none",
+        validatorUrl: null
+      });
+
+      // Apply Dark Mode
+      const darkModeStyles = `
+        body {
+          background-color: #1a1a1a;
+          color: #f0f0f0;
+        }
+        
+        .swagger-ui {
+          color: #f0f0f0;
+        }
+        
+        .swagger-ui .info {
+          background-color: #1a1a1a;
+        }
+        
+        .swagger-ui .opblock-tag, 
+        .swagger-ui .opblock .opblock-summary-operation-id, 
+        .swagger-ui .opblock .opblock-summary-path,
+        .swagger-ui .opblock .opblock-summary-path__deprecated,
+        .swagger-ui .opblock .opblock-summary-description,
+        .swagger-ui table thead tr th,
+        .swagger-ui .parameter__name,
+        .swagger-ui .parameter__type,
+        .swagger-ui .response-col_status,
+        .swagger-ui .response-col_description,
+        .swagger-ui .tab li,
+        .swagger-ui .info .title,
+        .swagger-ui .scheme-container .schemes > label {
+          color: #f0f0f0;
+        }
+        
+        .swagger-ui .opblock {
+          background-color: #222;
+          border-color: #444;
+        }
+        
+        .swagger-ui input[type=text],
+        .swagger-ui textarea {
+          background-color: #2d2d2d;
+          color: #f0f0f0;
+        }
+        
+        .swagger-ui select {
+          background-color: #2d2d2d;
+          color: #f0f0f0;
+        }
+        
+        .swagger-ui .topbar {
+          background-color: #222;
+        }
+        
+        .swagger-ui .btn {
+          background-color: #4990e2;
+          color: white;
+        }
+        
+        .swagger-ui .model-box {
+          background-color: #1a1a1a;
+        }
+        
+        .swagger-ui section.models {
+          border-color: #444;
+        }
+        
+        .swagger-ui section.models .model-container {
+          background-color: #222;
+          border-color: #444;
+        }
+        
+        .swagger-ui .model-title,
+        .swagger-ui .model {
+          color: #f0f0f0;
+        }
+        
+        .swagger-ui .responses-inner {
+          background-color: #1a1a1a;
+        }
+        
+        .swagger-ui .response-col_description__inner p {
+          color: #f0f0f0;
+        }
+        
+        .swagger-ui .opblock-body pre {
+          background-color: #2d2d2d;
+          color: #f0f0f0;
+        }
+        
+        .swagger-ui .opblock-body pre code {
+          color: #f0f0f0;
+        }
+        
+        .swagger-ui .scheme-container {
+          background-color: #222;
+        }
+        
+        .swagger-ui .opblock-tag {
+          border-bottom-color: #444;
+        }
+        
+        .swagger-ui .opblock .opblock-section-header {
+          background-color: #3b4151;
+        }
+        
+        .swagger-ui .opblock .opblock-section-header h4 {
+          color: #f0f0f0;
+        }
+        
+        .swagger-ui .execute-wrapper {
+          background-color: #1a1a1a;
+        }
+        
+        .swagger-ui .dialog-ux .modal-ux {
+          background-color: #1a1a1a;
+          border-color: #444;
+        }
+        
+        .swagger-ui .dialog-ux .modal-ux-header h3,
+        .swagger-ui .dialog-ux .modal-ux-content {
+          color: #f0f0f0;
+        }
+      `;
+
+      // Create style element
+      const styleElement = document.createElement('style');
+      styleElement.textContent = darkModeStyles;
+      
+      // Append to head
+      document.head.appendChild(styleElement);
+    };
+  </script>
+</body>
+</html> 
