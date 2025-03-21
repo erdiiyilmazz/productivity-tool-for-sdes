@@ -30,6 +30,43 @@ public class SecurityConfig {
     private final SessionAuthenticationFilter sessionAuthenticationFilter;
     private final CustomUserDetailsService userDetailsService;
 
+    private static final String[] SWAGGER_PATHS = {
+        "/swagger-ui/**", 
+        "/swagger-ui.html",
+        "/swagger-resources/**",
+        "/configuration/ui",
+        "/configuration/security",
+        "/webjars/**",
+        "/v3/api-docs/**",
+        "/v3/api-docs.yaml"
+    };
+    
+    private static final String[] STATIC_RESOURCES = {
+        "/static/**",
+        "/*.css",
+        "/*.js",
+        "/*.html",
+        "/favicon.ico",
+        "/swagger-ui-custom.css"
+    };
+    
+    private static final String[] PUBLIC_API_PATHS = {
+        "/api/v1/auth/register", 
+        "/api/v1/auth/login",
+        "/api/v1/auth/simple-login",
+        "/api/v1/auth/check",
+        "/api/v1/auth/session-info",
+        "/api/v1/auth/me",
+        "/api/v1/auth/debug",
+        "/api/v1/projects/**",
+        "/api/v1/tasks/**",                // Task management
+        "/api/v1/categories/**",           // Categories
+        "/api/v1/attachments/**",          // Task attachments
+        "/api/v1/schedules/**",            // Schedules
+        "/api/v1/reminders/**",            // Reminders 
+        "/api/v1/time-entries/**"          // Time tracking
+    };
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         log.debug("Configuring security filter chain...");
@@ -44,21 +81,10 @@ public class SecurityConfig {
                 .requireExplicitSave(false)
                 .securityContextRepository(securityContextRepository()))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/api/v1/auth/register", 
-                    "/api/v1/auth/login",
-                    "/api/v1/auth/simple-login",
-                    "/api/v1/auth/check",
-                    "/api/v1/auth/session-info",
-                    "/api/v1/auth/me",
-                    "/api/v1/auth/debug",
-                    "/api/v1/projects/**",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html",
-                    "/v3/api-docs/**",
-                    "/favicon.ico",
-                    "/error"
-                ).permitAll()
+                .requestMatchers(PUBLIC_API_PATHS).permitAll()
+                .requestMatchers(SWAGGER_PATHS).permitAll()
+                .requestMatchers(STATIC_RESOURCES).permitAll()
+                .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated())
             .formLogin(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)

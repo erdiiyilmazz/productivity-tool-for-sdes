@@ -5,9 +5,10 @@ import com.erdidev.taskmanager.model.TaskAttachment;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 import java.nio.charset.StandardCharsets;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface TaskAttachmentMapper {
     @Mapping(target = "task", ignore = true)
     @Mapping(target = "content", ignore = true)
