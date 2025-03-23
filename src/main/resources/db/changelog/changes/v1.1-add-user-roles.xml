@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+
+    <changeSet id="1.1" author="erdidev">
+        <!-- Users table -->
+        <createTable tableName="users">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="username" type="varchar(50)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="password" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="varchar(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="full_name" type="varchar(100)"/>
+            <column name="created_at" type="timestamp"/>
+            <column name="updated_at" type="timestamp"/>
+        </createTable>
+
+        <!-- Roles table -->
+        <createTable tableName="roles">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(20)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="description" type="varchar(100)"/>
+            <column name="created_at" type="timestamp"/>
+            <column name="updated_at" type="timestamp"/>
+        </createTable>
+
+        <!-- User-Role mapping table -->
+        <createTable tableName="user_roles">
+            <column name="user_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Project-User mapping table -->
+        <createTable tableName="project_members">
+            <column name="project_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Add user columns to existing tables -->
+        <addColumn tableName="projects">
+            <column name="owner_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="tasks">
+            <column name="creator_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="assignee_id" type="bigint"/>
+        </addColumn>
+
+        <!-- Foreign key constraints -->
+        <addForeignKeyConstraint baseTableName="user_roles" baseColumnNames="user_id"
+                                referencedTableName="users" referencedColumnNames="id"
+                                constraintName="fk_user_roles_user"/>
+        <addForeignKeyConstraint baseTableName="user_roles" baseColumnNames="role_id"
+                                referencedTableName="roles" referencedColumnNames="id"
+                                constraintName="fk_user_roles_role"/>
+        <addForeignKeyConstraint baseTableName="project_members" baseColumnNames="project_id"
+                                referencedTableName="projects" referencedColumnNames="id"
+                                constraintName="fk_project_members_project"/>
+        <addForeignKeyConstraint baseTableName="project_members" baseColumnNames="user_id"
+                                referencedTableName="users" referencedColumnNames="id"
+                                constraintName="fk_project_members_user"/>
+
+        <!-- Task foreign keys -->
+        <addForeignKeyConstraint baseTableName="tasks" baseColumnNames="creator_id"
+                                referencedTableName="users" referencedColumnNames="id"
+                                constraintName="fk_tasks_creator"/>
+        <addForeignKeyConstraint baseTableName="tasks" baseColumnNames="assignee_id"
+                                referencedTableName="users" referencedColumnNames="id"
+                                constraintName="fk_tasks_assignee"/>
+        
+        <!-- Project owner foreign key -->
+        <addForeignKeyConstraint baseTableName="projects" baseColumnNames="owner_id"
+                                referencedTableName="users" referencedColumnNames="id"
+                                constraintName="fk_projects_owner"/>
+
+        <!-- Create task watchers table -->
+        <createTable tableName="task_watchers">
+            <column name="task_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Task watchers foreign keys -->
+        <addForeignKeyConstraint baseTableName="task_watchers" baseColumnNames="task_id"
+                                referencedTableName="tasks" referencedColumnNames="id"
+                                constraintName="fk_task_watchers_task"/>
+        <addForeignKeyConstraint baseTableName="task_watchers" baseColumnNames="user_id"
+                                referencedTableName="users" referencedColumnNames="id"
+                                constraintName="fk_task_watchers_user"/>
+
+        <!-- Add primary key constraints to junction tables -->
+        <addPrimaryKey tableName="user_roles" 
+                      columnNames="user_id, role_id"
+                      constraintName="pk_user_roles"/>
+                      
+        <addPrimaryKey tableName="project_members" 
+                      columnNames="project_id, user_id"
+                      constraintName="pk_project_members"/>
+                      
+        <addPrimaryKey tableName="task_watchers" 
+                      columnNames="task_id, user_id"
+                      constraintName="pk_task_watchers"/>
+    </changeSet>
+</databaseChangeLog> 
