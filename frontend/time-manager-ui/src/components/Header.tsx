@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   AppBar,
@@ -76,10 +76,10 @@ const Header: React.FC = () => {
           onClose={handleMenuClose}
         >
           <MenuItem onClick={() => { handleMenuClose(); navigate('/'); }}>Home</MenuItem>
-          {user && (
+          {isAuthenticated && (
             <MenuItem onClick={() => { handleMenuClose(); navigate('/tasks'); }}>Tasks</MenuItem>
           )}
-          {user && (
+          {isAuthenticated && (
             <MenuItem onClick={() => { handleMenuClose(); navigate('/projects'); }}>Projects</MenuItem>
           )}
         </Menu>

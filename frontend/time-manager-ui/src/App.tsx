@@ -5,6 +5,8 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
+import Tasks from './pages/Tasks';
+import TaskForm from './pages/TaskForm';
 import Header from './components/Header';
 import authService, { UserResponse } from './services/authService';
 
@@ -97,8 +99,9 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
             <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
-            {/* Add more protected routes as needed */}
-            {/* <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} /> */}
+            <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+            <Route path="/tasks/create" element={<ProtectedRoute><TaskForm /></ProtectedRoute>} />
+            <Route path="/tasks/edit/:id" element={<ProtectedRoute><TaskForm isEditing={true} /></ProtectedRoute>} />
           </Routes>
         </Router>
       </AuthContext.Provider>
