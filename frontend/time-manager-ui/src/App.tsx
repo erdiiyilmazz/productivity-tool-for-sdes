@@ -7,6 +7,8 @@ import Register from './pages/Register';
 import Home from './pages/Home';
 import Tasks from './pages/Tasks';
 import TaskForm from './pages/TaskForm';
+import Projects from './pages/Projects';
+import Categories from './pages/Categories';
 import Header from './components/Header';
 import authService, { UserResponse } from './services/authService';
 
@@ -102,6 +104,8 @@ function App() {
             <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
             <Route path="/tasks/create" element={<ProtectedRoute><TaskForm /></ProtectedRoute>} />
             <Route path="/tasks/edit/:id" element={<ProtectedRoute><TaskForm isEditing={true} /></ProtectedRoute>} />
+            <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+            <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
           </Routes>
         </Router>
       </AuthContext.Provider>

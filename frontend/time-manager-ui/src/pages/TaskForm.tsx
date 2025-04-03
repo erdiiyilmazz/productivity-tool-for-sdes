@@ -103,22 +103,65 @@ const TaskForm: React.FC<TaskFormProps> = ({ isEditing = false }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const errors: string[] = [];
+    
     if (!task.title.trim()) {
-      setError('Title is required');
+      errors.push('Title is required');
+    }
+    
+    if (!task.projectId) {
+      errors.push('Project is required');
+      setError('Project is required');
       return;
     }
+    
+    if (errors.length > 0) {
+      setError(errors.join(', '));
+      return;
+    }
+    
+    const taskToSubmit: {
+      title: string;
+      description: string;
+      status: TaskStatus;
+      priority: Priority;
+      projectId: number;
+      categoryId?: number;
+      assigneeId?: number;
+      dueDate?: string;
+    } = {
+      title: task.title,
+      description: task.description || "",
+      status: task.status || TaskStatus.TODO,
+      priority: task.priority || Priority.MEDIUM,
+      projectId: Number(task.projectId)
+    };
+    
+    // Only add optional fields if they have valid values
+    if (task.categoryId) {
+      taskToSubmit.categoryId = Number(task.categoryId);
+    }
+    
+    if (task.assigneeId) {
+      taskToSubmit.assigneeId = Number(task.assigneeId);
+    }
+    
+    if (task.dueDate) {
+      taskToSubmit.dueDate = task.dueDate;
+    }
+    
+    console.log('Submitting task data:', JSON.stringify(taskToSubmit, null, 2));
     
     setLoading(true);
     setError(null);
     
     try {
       if (isEditing && id) {
-        await taskService.updateTask(parseInt(id), task);
+        await taskService.updateTask(parseInt(id), taskToSubmit as TaskDto);
         setSuccess('Task updated successfully!');
       } else {
-        await taskService.createTask(task);
+        await taskService.createTask(taskToSubmit as TaskDto);
         setSuccess('Task created successfully!');
-        // Reset form after successful creation
         if (!isEditing) {
           setTask({
             title: '',
@@ -131,9 +174,32 @@ const TaskForm: React.FC<TaskFormProps> = ({ isEditing = false }) => {
           });
         }
       }
-    } catch (err) {
+      
+      setTimeout(() => {
+        handleClose();
+      }, 1500);
+    } catch (err: any) {
       console.error('Error saving task:', err);
-      setError('Failed to save task. Please try again.');
+      let errorMessage = 'Failed to save task. Please try again.';
+      
+      if (err.response) {
+        console.log('Error response status:', err.response.status);
+        console.log('Error response data:', JSON.stringify(err.response.data, null, 2));
+        
+        if (err.response.data && err.response.data.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.response.data && err.response.data.error) {
+          errorMessage = err.response.data.error;
+        } else if (err.response.data && err.response.data.errors && Array.isArray(err.response.data.errors)) {
+          errorMessage = err.response.data.errors.map((e: any) => e.message || e.defaultMessage).join(', ');
+        } else if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -264,6 +330,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isEditing = false }) => {
                     value={task.categoryId || ''}
                     onChange={handleCategoryChange}
                     disabled={loading}
+                    required={false}
                   />
                 </Grid>
                 
@@ -279,6 +346,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isEditing = false }) => {
                     value={task.assigneeId || ''}
                     onChange={handleAssigneeChange}
                     disabled={loading}
+                    required={false}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>

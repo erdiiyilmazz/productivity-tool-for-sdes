@@ -51,30 +51,46 @@ const UserSelect: React.FC<UserSelectProps> = ({
         try {
           const allUsers = await userService.getAllUsers();
           setUsers(allUsers);
+          
+          // If selected user doesn't exist in the list, reset selection
+          if (value !== '' && !allUsers.some(user => user.id === value)) {
+            onChange('');
+          }
+          
           setLoadError(null);
         } catch (err) {
           console.log('Failed to get all users, falling back to current user only');
           const currentUser = await userService.getCurrentUser();
-          setUsers(currentUser ? [currentUser] : []);
+          const usersList = currentUser ? [currentUser] : [];
+          setUsers(usersList);
+          
+          // If selected user doesn't exist in the list, reset selection
+          if (value !== '' && !usersList.some(user => user.id === value)) {
+            onChange('');
+          }
+          
           setLoadError(null);
         }
       } catch (err) {
         console.error('Error loading users:', err);
         setLoadError('Failed to load users');
         setUsers([]);
+        
+        // Reset selection if we have no users
+        if (value !== '') {
+          onChange('');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchUsers();
-  }, []);
+  }, [onChange]);
 
   const handleChange = (event: SelectChangeEvent<number | ''>) => {
     const newValue = event.target.value;
-    if (newValue !== value) {
-      onChange(newValue === '' ? '' : Number(newValue));
-    }
+    onChange(newValue === '' ? '' : Number(newValue));
   };
 
   return (
@@ -89,7 +105,7 @@ const UserSelect: React.FC<UserSelectProps> = ({
       <InputLabel id="user-select-label">{label}</InputLabel>
       <Select
         labelId="user-select-label"
-        value={value}
+        value={users.length > 0 ? value : ''}
         label={label}
         onChange={handleChange}
         startAdornment={loading ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
@@ -104,7 +120,7 @@ const UserSelect: React.FC<UserSelectProps> = ({
           <em>None</em>
         </MenuItem>
         {users.map((user) => (
-          <MenuItem key={user.id} value={user.id} sx={{ display: 'flex', alignItems: 'center' }}>
+          <MenuItem key={user.id} value={user.id || ''} sx={{ display: 'flex', alignItems: 'center' }}>
             <ListItemAvatar>
               <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: 'primary.main' }}>
                 {user.username.charAt(0).toUpperCase()}
