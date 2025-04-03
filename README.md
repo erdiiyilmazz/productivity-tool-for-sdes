@@ -2,7 +2,6 @@
 
 A comprehensive task and time management application with integrated authentication, task management, time tracking, and project organization capabilities.
 
-![Time Manager Logo](frontend/time-manager-ui/src/assets/logo.svg)
 
 ## 📋 Features
 
@@ -164,7 +163,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 👥 Contributors
 
-- [ErdiDev](https://github.com/erdidev) - Initial work and ongoing development
+- [Erdi Yılmaz](https://github.com/erdiiyilmazz) - Initial work and ongoing development
 
 ## 🙏 Acknowledgements
 
