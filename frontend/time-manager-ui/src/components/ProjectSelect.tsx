@@ -45,24 +45,31 @@ const ProjectSelect: React.FC<ProjectSelectProps> = ({
         setLoading(true);
         const response = await projectService.getProjects();
         setProjects(response.content);
+        
+        if (value !== '' && !response.content.some(proj => proj.id === value)) {
+          onChange('');
+        }
+        
         setLoadError(null);
       } catch (err) {
         console.error('Error loading projects:', err);
         setLoadError('Failed to load projects');
         setProjects([]);
+        
+        if (value !== '') {
+          onChange('');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchProjects();
-  }, []);
+  }, [onChange]);
 
   const handleChange = (event: SelectChangeEvent<number | ''>) => {
     const newValue = event.target.value;
-    if (newValue !== value) {
-      onChange(newValue === '' ? '' : Number(newValue));
-    }
+    onChange(newValue === '' ? '' : Number(newValue));
   };
 
   return (
@@ -77,7 +84,7 @@ const ProjectSelect: React.FC<ProjectSelectProps> = ({
       <InputLabel id="project-select-label">{label}</InputLabel>
       <Select
         labelId="project-select-label"
-        value={value}
+        value={projects.length > 0 ? value : ''}
         label={label}
         onChange={handleChange}
         startAdornment={loading ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
@@ -86,7 +93,7 @@ const ProjectSelect: React.FC<ProjectSelectProps> = ({
           <em>None</em>
         </MenuItem>
         {projects.map((project) => (
-          <MenuItem key={project.id} value={project.id}>
+          <MenuItem key={project.id} value={project.id || ''}>
             {project.name}
           </MenuItem>
         ))}

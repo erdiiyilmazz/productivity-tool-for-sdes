@@ -46,6 +46,9 @@ const CategorySelect: React.FC<CategorySelectProps> = ({
     const fetchCategories = async () => {
       if (!projectId) {
         setCategories([]);
+        if (value !== '') {
+          onChange('');
+        }
         return;
       }
 
@@ -53,31 +56,30 @@ const CategorySelect: React.FC<CategorySelectProps> = ({
         setLoading(true);
         const response = await categoryService.getCategoriesByProject(projectId);
         setCategories(response.content);
+        
+        if (value !== '' && !response.content.some(cat => cat.id === value)) {
+          onChange('');
+        }
+        
         setLoadError(null);
       } catch (err) {
         console.error('Error loading categories:', err);
         setLoadError('Failed to load categories');
         setCategories([]);
+        if (value !== '') {
+          onChange('');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchCategories();
-  }, [projectId]);
-
-  // Reset category selection when project changes
-  useEffect(() => {
-    if (projectId === null && value !== '') {
-      onChange('');
-    }
-  }, [projectId, value, onChange]);
+  }, [projectId, onChange]);
 
   const handleChange = (event: SelectChangeEvent<number | ''>) => {
     const newValue = event.target.value;
-    if (newValue !== value) { // Only trigger onChange if value actually changed
-      onChange(newValue === '' ? '' : Number(newValue));
-    }
+    onChange(newValue === '' ? '' : Number(newValue));
   };
 
   return (
@@ -92,7 +94,7 @@ const CategorySelect: React.FC<CategorySelectProps> = ({
       <InputLabel id="category-select-label">{label}</InputLabel>
       <Select
         labelId="category-select-label"
-        value={value}
+        value={categories.length > 0 ? value : ''}
         label={label}
         onChange={handleChange}
         startAdornment={loading ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
@@ -101,7 +103,7 @@ const CategorySelect: React.FC<CategorySelectProps> = ({
           <em>None</em>
         </MenuItem>
         {categories.map((category) => (
-          <MenuItem key={category.id} value={category.id}>
+          <MenuItem key={category.id} value={category.id || ''}>
             {category.name}
           </MenuItem>
         ))}
