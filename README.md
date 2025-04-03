@@ -1,6 +1,6 @@
-# Time Manager
+# Productivity Tool For Software Development Products(Need a cool&unique name for this :)
 
-A comprehensive task and time management application with integrated authentication, task management, time tracking, and project organization capabilities.
+A comprehensive task and time management application with integrated authentication, task management, time tracking, and project organization capabilities for software developers/project managers/scrum masters.
 
 
 ## 📋 Features
