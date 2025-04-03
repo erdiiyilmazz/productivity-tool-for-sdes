@@ -17,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -88,5 +90,18 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+    }
+    
+    @GetMapping("/users")
+    @Operation(summary = "Get all users")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "List of users retrieved"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        List<UserDto> users = authService.getAllUsers();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(users);
     }
 } 

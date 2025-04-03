@@ -4,6 +4,7 @@ import com.erdidev.authmanager.dto.AuthRequest;
 import com.erdidev.authmanager.dto.RegisterRequest;
 import com.erdidev.authmanager.dto.UserDto;
 import com.erdidev.authmanager.exception.AuthenticationException;
+import com.erdidev.authmanager.exception.UserNotFoundException;
 import com.erdidev.authmanager.mapper.UserMapper;
 import com.erdidev.authmanager.model.Role;
 import com.erdidev.authmanager.model.RoleType;
@@ -23,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -135,8 +138,18 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public UserDto getCurrentUser(String username) {
-        return userRepository.findByUsername(username)
+        log.debug("Getting current user: {}", username);
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new UserNotFoundException(username));
+        
+        return userMapper.toDto(user);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserDto> getAllUsers() {
+        log.debug("Getting all users");
+        return userRepository.findAll().stream()
             .map(userMapper::toDto)
-            .orElseThrow(() -> new AuthenticationException("User not found"));
+            .collect(Collectors.toList());
     }
 } 
